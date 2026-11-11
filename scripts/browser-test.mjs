@@ -1,0 +1,299 @@
+#!/usr/bin/env node
+/* global axe */ // injected into the page by addScriptTag
+/**
+ * Real-browser tests against the static export in ./out.
+ *
+ *   npm run build && npm run test:browser
+ *   npm run test:browser -- --shots      also save full-page screenshots to .test-output/
+ *
+ * Needs Chrome, Edge or Chromium installed (set CHROME_PATH to override).
+ * Covers: console errors, failed requests, horizontal overflow at three widths,
+ * an axe-core accessibility audit, and key interactions.
+ */
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { createServer } from "node:http";
+import path from "node:path";
+import { chromium } from "playwright-core";
+
+const OUT = path.resolve("out");
+const SHOTS = process.argv.includes("--shots") ? path.resolve(".test-output") : null;
+if (!existsSync(OUT)) {
+  console.error('No ./out folder. Run "npm run build" first.');
+  process.exit(1);
+}
+if (SHOTS) mkdirSync(SHOTS, { recursive: true });
+
+const CHROME_CANDIDATES = [
+  process.env.CHROME_PATH,
+  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+].filter(Boolean);
+const executablePath = CHROME_CANDIDATES.find((p) => existsSync(p));
+if (!executablePath) {
+  console.error("No Chrome/Edge/Chromium found. Set CHROME_PATH.");
+  process.exit(1);
+}
+
+// ---- minimal static server (clean URLs, 404.html) -------------------------
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".txt": "text/plain", ".xml": "application/xml", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff" };
+function fileFor(urlPath) {
+  const clean = decodeURIComponent(urlPath.split("?")[0].split("#")[0]);
+  for (const c of [clean, `${clean}.html`, path.posix.join(clean, "index.html")]) {
+    const f = path.join(OUT, c);
+    if (f.startsWith(OUT) && existsSync(f) && statSync(f).isFile()) return f;
+  }
+  return null;
+}
+const server = createServer((req, res) => {
+  const f = fileFor(req.url ?? "/");
+  const file = f ?? path.join(OUT, "404.html");
+  res.writeHead(f ? 200 : 404, { "content-type": MIME[path.extname(file)] ?? "application/octet-stream" });
+  res.end(readFileSync(file));
+});
+await new Promise((r) => server.listen(0, "127.0.0.1", r));
+const BASE = `http://127.0.0.1:${server.address().port}`;
+
+// ---- test bookkeeping -----------------------------------------------------
+const failures = [];
+const notes = [];
+let passed = 0;
+function check(name, ok, detail = "") {
+  if (ok) passed++;
+  else failures.push(`${name}${detail ? ` -> ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${!ok && detail ? `  (${detail})` : ""}`);
+}
+
+const routes = ["/", "/about", "/community", "/projects", "/projects/bolkhata", "/events", "/events/alibaba-cloud-ai-hackathon-pakistan-2026-national-finals", "/team", "/blog", "/join", "/privacy", "/terms", "/blog/no-posts-yet"];
+const viewports = [
+  { name: "mobile", width: 375, height: 812 },
+  { name: "tablet", width: 768, height: 1024 },
+  { name: "desktop", width: 1280, height: 800 },
+];
+/** Run an interaction group; a thrown error becomes a recorded failure instead of aborting the suite. */
+async function guard(name, fn) {
+  try {
+    await fn();
+  } catch (e) {
+    check(` (crashed)`, false, String(e.message ?? e).split("\n")[0]);
+  }
+}
+const slug = (r) => (r === "/" ? "home" : r.slice(1).replace(/\//g, "_")).slice(0, 40);
+
+const browser = await chromium.launch({ executablePath, headless: true });
+const axeSource = readFileSync(path.resolve("node_modules/axe-core/axe.min.js"), "utf8");
+
+try {
+  // ======== 1. page matrix: console, requests, overflow, screenshots =========
+  console.log("\n== Pages x viewports ==");
+  for (const vp of viewports) {
+    const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
+    for (const route of routes) {
+      const page = await context.newPage();
+      const problems = [];
+      page.on("console", (m) => {
+        if (m.type() === "error") problems.push(`console.error: ${m.text().slice(0, 200)}`);
+      });
+      page.on("pageerror", (e) => problems.push(`pageerror: ${e.message.slice(0, 200)}`));
+      page.on("requestfailed", (r) => problems.push(`request failed: ${r.url()}`));
+      page.on("response", (r) => {
+        if (r.status() >= 400 && r.url() !== `${BASE}${route}`) problems.push(`HTTP ${r.status()}: ${r.url()}`);
+      });
+      const res = await page.goto(BASE + route, { waitUntil: "networkidle" });
+      const expected = 200;
+      if (res.status() !== expected) problems.push(`status ${res.status()}`);
+      await page.waitForTimeout(900); // let entrance animations settle
+
+      const overflow = await page.evaluate(() => {
+        const de = document.documentElement;
+        const wide = [...document.querySelectorAll("body *")].filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.right > de.clientWidth + 1 && getComputedStyle(el).position !== "fixed";
+        });
+        return { scrollWidth: de.scrollWidth, clientWidth: de.clientWidth, culprits: wide.slice(0, 3).map((e) => `${e.tagName.toLowerCase()}.${String(e.className).slice(0, 50)}`) };
+      });
+      if (overflow.scrollWidth > overflow.clientWidth + 1) problems.push(`horizontal overflow ${overflow.scrollWidth}>${overflow.clientWidth} (${overflow.culprits.join(", ")})`);
+
+      check(`${vp.name.padEnd(7)} ${route}`, problems.length === 0, problems.join("; "));
+      if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `${vp.name}_${slug(route)}.png`), fullPage: true });
+      await page.close();
+    }
+    await context.close();
+  }
+
+  // ======== 2. accessibility (axe-core) ======================================
+  console.log("\n== Accessibility (axe-core, WCAG 2.0/2.1 A + AA) ==");
+  for (const vp of [viewports[0], viewports[2]]) {
+    const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
+    for (const route of routes) {
+      const page = await context.newPage();
+      await page.goto(BASE + route, { waitUntil: "networkidle" });
+      await page.waitForTimeout(1200); // finish fade-ins so contrast is measured on final colors
+      await page.addScriptTag({ content: axeSource });
+      const result = await page.evaluate(() =>
+        axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } }).then((r) => r.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, count: v.nodes.length, sample: v.nodes.slice(0, 2).map((n) => `${n.target.join(" ")} :: ${(n.failureSummary ?? "").replace(/\s+/g, " ").slice(0, 160)}`) }))),
+      );
+      check(`a11y ${vp.name.padEnd(7)} ${route}`, result.length === 0, result.map((v) => `${v.id}[${v.impact}] x${v.count}: ${v.sample.join(" | ")}`).join(" ;; "));
+      await page.close();
+    }
+    await context.close();
+  }
+
+  // ======== 3. interactions ==================================================
+  console.log("\n== Interactions ==");
+
+  // 3a. mobile menu
+  await guard("3a. mobile menu", async () => {
+    const context = await browser.newContext({ viewport: { width: 375, height: 812 } });
+    const page = await context.newPage();
+    await page.goto(BASE + "/", { waitUntil: "networkidle" });
+    const desktopNavHidden = !(await page.locator('nav[aria-label="Main"]').isVisible());
+    check("mobile: desktop nav hidden", desktopNavHidden);
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+    check("mobile: menu opens as a dialog", await dialog.isVisible());
+    const labels = await dialog.locator("nav a").allInnerTexts();
+    check("mobile: menu lists all 7 links", labels.length === 7 && ["Home", "About", "Community", "Projects", "Events", "Team", "Blog"].every((l) => labels.some((x) => x.trim() === l)), labels.join(","));
+    check("mobile: menu has Join CTA", (await dialog.getByRole("link", { name: "Join Community" }).count()) === 1);
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
+    check("mobile: Escape closes menu", !(await dialog.isVisible().catch(() => false)));
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    await page.getByRole("dialog").getByRole("link", { name: "Team" }).click();
+    await page.waitForURL("**/team", { timeout: 5000 }).catch(() => {});
+    check("mobile: tapping Team navigates to /team", page.url().endsWith("/team"), page.url());
+    await page.waitForTimeout(500);
+    check("mobile: menu closes after navigating", !(await page.getByRole("dialog").isVisible().catch(() => false)));
+    await context.close();
+  });
+
+  // 3b. desktop nav + keyboard
+  await guard("3b. desktop nav + keyboard", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(BASE + "/about", { waitUntil: "networkidle" });
+    const current = await page.locator('nav[aria-label="Main"] a[aria-current="page"]').allInnerTexts();
+    check("desktop: active nav item is About", current.length === 1 && current[0].trim() === "About", current.join(","));
+    check("desktop: navbar is sticky", (await page.evaluate(() => getComputedStyle(document.querySelector("header")).position)) === "sticky");
+
+    await page.goto(BASE + "/", { waitUntil: "networkidle" });
+    await page.keyboard.press("Tab");
+    const first = await page.evaluate(() => ({ text: document.activeElement?.textContent?.trim(), visible: (() => { const r = document.activeElement?.getBoundingClientRect(); return !!r && r.width > 1 && r.height > 1 && r.top >= 0; })() }));
+    check('keyboard: first Tab stop is "Skip to content" and visible', first.text === "Skip to content" && first.visible, JSON.stringify(first));
+    await page.keyboard.press("Enter");
+    check("keyboard: skip link jumps to #main", page.url().endsWith("#main"), page.url());
+    // focus ring visible on a link
+    await page.goto(BASE + "/", { waitUntil: "networkidle" });
+    for (let i = 0; i < 4; i++) await page.keyboard.press("Tab");
+    const ring = await page.evaluate(() => { const s = getComputedStyle(document.activeElement); return { outline: s.outlineStyle, width: s.outlineWidth }; });
+    check("keyboard: focused element shows an outline", ring.outline !== "none" && parseFloat(ring.width) >= 1, JSON.stringify(ring));
+    await context.close();
+  });
+
+  // 3c. projects search + filters
+  await guard("3c. projects search + filters", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(BASE + "/projects", { waitUntil: "networkidle" });
+    const status = () => page.getByRole("status").filter({ hasText: /project/ }).first().innerText();
+    check("projects: initial count is 1 project", (await status()).trim() === "1 project", await status());
+    const search = page.getByRole("searchbox", { name: "Search projects" });
+    await search.fill("bol");
+    check("projects: search 'bol' finds BolKhata", (await status()).trim() === "1 project");
+    await search.fill("zzzz");
+    check("projects: search with no match shows empty state", (await page.getByText("No projects match your filters").count()) === 1);
+    await page.getByRole("button", { name: "Clear filters" }).click();
+    check("projects: Clear filters restores results", (await status()).trim() === "1 project" && (await search.inputValue()) === "");
+    await page.getByRole("button", { name: /^Web Development/ }).click();
+    check("projects: category filter 'Web Development' -> 0 projects", (await status()).trim() === "0 projects");
+    await page.getByRole("button", { name: /^AI\/ML/ }).click();
+    check("projects: category filter 'AI/ML' -> 1 project", (await status()).trim() === "1 project");
+    check("projects: active filter exposes aria-pressed", (await page.getByRole("button", { name: /^AI\/ML/ }).getAttribute("aria-pressed")) === "true");
+    check("projects: technology filter hidden while no technologies exist", (await page.getByRole("group", { name: "Filter by technology" }).count()) === 0);
+    await context.close();
+  });
+
+  // 3d. copy-to-clipboard + external link safety
+  await guard("3d. copy-to-clipboard + external link safety", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, permissions: ["clipboard-read", "clipboard-write"] });
+    const page = await context.newPage();
+    await page.goto(BASE + "/community", { waitUntil: "networkidle" });
+    const buttons = page.getByRole("button", { name: /^Copy link for / });
+    check("community: 3 copy-link buttons (WhatsApp, Discord, Telegram)", (await buttons.count()) === 3, String(await buttons.count()));
+    await page.getByRole("button", { name: /for WhatsApp Community$/ }).click();
+    await page.waitForTimeout(300);
+    const clip = await page.evaluate(() => navigator.clipboard.readText());
+    check("community: copy puts the WhatsApp invite URL on the clipboard", clip === "https://chat.whatsapp.com/HosYEWJuqnvEn21xO0tMqU", clip);
+    check('community: button label changes to "Copied"', (await page.getByRole("button", { name: /for WhatsApp Community$/ }).innerText()).includes("Copied"));
+    check("community: live region announces the copy", (await page.getByText("WhatsApp Community link copied to clipboard").count()) === 1);
+    const ext = await page.evaluate(() => [...document.querySelectorAll('a[href^="http"]')].filter((a) => a.target === "_blank" && !/noopener/.test(a.rel)).length);
+    check("community: every _blank link has rel=noopener", ext === 0, String(ext));
+    check("community: FAQ accordion expands", await (async () => {
+      const q = page.getByRole("button", { name: "Who can join Trojans PK?" });
+      await q.click();
+      await page.waitForTimeout(400);
+      return (await q.getAttribute("aria-expanded")) === "true";
+    })());
+    await context.close();
+  });
+
+  // 3e. reduced motion: content must be visible without animation
+  await guard("3e0. no-JS: content visible without JavaScript", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto(BASE + "/", { waitUntil: "load" });
+    await page.waitForTimeout(1200); // CSS entrance animations finish without JS
+    const h1 = await page.evaluate(() => getComputedStyle(document.querySelector("h1").parentElement).opacity);
+    check("no-JS: hero heading is visible", h1 === "1", h1);
+    const target = page.getByText("Community, not company");
+    await target.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(600);
+    const op = await target.evaluate((el) => getComputedStyle(el.closest(".reveal-in-view") ?? el).opacity);
+    check("no-JS: scroll-revealed mission text is visible once in view", op === "1", op);
+    const hiddenInHtml = await page.evaluate(() => [...document.querySelectorAll('[style*="opacity:0"], [style*="opacity: 0"]')].filter((el) => !el.closest('[aria-hidden="true"]')).length);
+    check("no-JS: no meaningful content is shipped with inline opacity:0", hiddenInHtml === 0, String(hiddenInHtml));
+    await context.close();
+  });
+
+  // 3e. reduced motion: content must be visible without animation
+  await guard("3e. reduced motion: content must be visible without animation", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+    const op = await page.evaluate(() => getComputedStyle(document.querySelector("h1")).opacity);
+    check("reduced motion: hero heading is immediately fully visible", op === "1", op);
+    check("reduced motion: grid drift animation is neutralised", await page.evaluate(() => { const d = parseFloat(getComputedStyle(document.querySelector(".animate-grid-drift")).animationDuration); return d < 0.1; }));
+    await context.close();
+  });
+
+  // 3f. content truthfulness + join page without backend
+  await guard("3f. content truthfulness + join page without backend", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(BASE + "/join", { waitUntil: "networkidle" });
+    check("join: no <form> and no Apply button while applicationFormUrl is null", (await page.locator("form").count()) === 0 && (await page.getByRole("link", { name: /Apply now/ }).count()) === 0);
+    check("join: shows the three community invite cards", (await page.getByRole("link", { name: /Join now/ }).count()) === 3);
+    await page.goto(BASE + "/", { waitUntil: "networkidle" });
+    const text = await page.evaluate(() => document.body.innerText);
+    check("home: no testimonials or statistics sections (nothing invented)", !/What members say|Community impact/.test(text));
+    check("home: achievement shows BolKhata + National Finalist + 24 October 2026", /BolKhata/.test(text) && /National Finalist/.test(text) && /24 October 2026/.test(text));
+    await page.goto(BASE + "/does-not-exist", { waitUntil: "networkidle" });
+    check("404 page renders custom page with link home", (await page.getByRole("heading", { name: "Page not found" }).count()) === 1 && (await page.getByRole("link", { name: "Back to home" }).count()) === 1);
+    await context.close();
+  });
+} finally {
+  await browser.close();
+  server.close();
+}
+
+console.log(`\n${passed} passed, ${failures.length} failed.`);
+if (notes.length) console.log(notes.join("\n"));
+if (failures.length) {
+  console.log("\nFAILURES:\n - " + failures.join("\n - "));
+  process.exit(1);
+}

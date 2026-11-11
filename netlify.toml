@@ -1,0 +1,10 @@
+# Netlify: static export. HTTP headers come from public/_headers.
+# Set NEXT_PUBLIC_SITE_URL in Site settings > Environment variables
+# (Netlify's own URL is used automatically if it is not set).
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "24"
+  NEXT_TELEMETRY_DISABLED = "1"

@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Fully static site: no backend, database or server runtime. `next build`
+  // writes the deployable site to ./out and works on any static host.
+  output: "export",
+  images: {
+    // The default image optimizer needs a server. Compress images before adding them to /public.
+    unoptimized: true,
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -1,0 +1,52 @@
+name: CI
+
+# Lint, type-check, build the static site and run the site audit + browser
+# tests on every push and pull request. Deployment is handled by the host
+# (Vercel / Netlify / Cloudflare Pages) from the same repository.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Checks do not need the real domain; production builds on the host must set NEXT_PUBLIC_SITE_URL.
+      ALLOW_LOCALHOST_SITE_URL: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build (validates all content)
+        run: npm run build
+
+      - name: Site audit (links, SEO, structured data, headers)
+        run: npm run check:site
+
+      - name: Browser tests (Chrome is preinstalled on ubuntu-latest)
+        run: npm run test:browser
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
