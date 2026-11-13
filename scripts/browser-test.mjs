@@ -99,7 +99,12 @@ try {
         if (m.type() === "error") problems.push(`console.error: ${m.text().slice(0, 200)}`);
       });
       page.on("pageerror", (e) => problems.push(`pageerror: ${e.message.slice(0, 200)}`));
-      page.on("requestfailed", (r) => problems.push(`request failed: ${r.url()}`));
+      page.on("requestfailed", (r) => {
+        const errorText = r.failure()?.errorText ?? "";
+        // Ignore benign aborts from in-flight prefetch/navigation teardown.
+        if (/aborted|canceled/i.test(errorText)) return;
+        problems.push(`request failed: ${r.url()}${errorText ? ` (${errorText})` : ""}`);
+      });
       page.on("response", (r) => {
         if (r.status() >= 400 && r.url() !== `${BASE}${route}`) problems.push(`HTTP ${r.status()}: ${r.url()}`);
       });
