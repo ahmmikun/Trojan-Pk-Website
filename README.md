@@ -126,4 +126,4 @@ first deploy (for example with securityheaders.com); they have not yet been test
   TypeScript tooling pinned by `eslint-config-next`. It is not part of the built site
   (`npm audit --omit=dev` reports 0). It clears when `eslint-config-next` updates.
 - **Browser coverage.** Automated tests run in Chromium. In browsers without CSS scroll-driven animations
-  (some Firefox/Safari versions) the scroll reveals simply appear without animating.
+  (some Firefox/Safari versions) the scroll reveals simply appear without animating. 
