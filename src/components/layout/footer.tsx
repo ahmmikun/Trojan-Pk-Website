@@ -117,6 +117,19 @@ export async function Footer() {
             </li>
           ))}
         </ul>
+        <p className="text-sm text-muted-foreground">
+          Built by{" "}
+          <a
+            href="https://www.talhairfandev.me"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-0.5 text-foreground"
+          >
+            <span className="link-underline">Talha Irfan</span>
+            <ArrowUpRight aria-hidden="true" className="size-3.5 transition-transform duration-500 ease-[var(--ease-premium)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <span className="sr-only">(portfolio, opens in a new tab)</span>
+          </a>
+        </p>
       </Container>
     </footer>
   );
