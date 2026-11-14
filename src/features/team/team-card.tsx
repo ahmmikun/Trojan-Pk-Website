@@ -1,5 +1,5 @@
 import { Globe } from "lucide-react";
-import Image from "next/image";
+import { ParallaxImage } from "@/components/motion/parallax-image";
 import { Chip } from "@/components/common/chip";
 import { BrandIcon } from "@/components/social/brand-icon";
 import { initials } from "@/lib/format";
@@ -10,17 +10,17 @@ export function MemberAvatar({ member, className }: { member: TeamMember; classN
   return (
     <div className={cn("relative aspect-[4/5] overflow-hidden bg-surface-2", className)}>
       {member.photo ? (
-        <Image src={member.photo} alt={`Portrait of ${member.name}`} fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover" />
+        <ParallaxImage src={member.photo} alt={`Portrait of ${member.name}`} sizes="(min-width: 1024px) 33vw, 100vw" />
       ) : (
-        <div aria-hidden="true" className="bg-dots absolute inset-0 flex items-center justify-center">
-          <span className="font-mono text-6xl font-light tracking-widest text-foreground/25">{initials(member.name)}</span>
+        <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+          <span className="text-6xl font-light tracking-tighter text-muted-foreground">{initials(member.name)}</span>
         </div>
       )}
     </div>
   );
 }
 
-const iconLink = "inline-flex size-9 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-white/20 hover:bg-white/5 hover:text-foreground";
+const iconLink = "inline-flex size-9 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground";
 
 export function MemberLinks({ member }: { member: TeamMember }) {
   const items = [
@@ -49,7 +49,7 @@ export function TeamProfile({ member, index = 0 }: { member: TeamMember; index?:
     <article id={member.slug} className="grid scroll-mt-24 items-center gap-8 py-12 lg:grid-cols-12 lg:gap-14">
       <MemberAvatar member={member} className={cn("rounded-lg border border-border lg:col-span-4", index % 2 === 1 && "lg:order-2")} />
       <div className="lg:col-span-8">
-        <p className="font-mono text-xs tracking-[0.18em] text-brand-blue uppercase">
+        <p className="text-xs text-brand-blue">
           <span aria-hidden="true">{String(index + 1).padStart(2, "0")} / </span>
           {member.role}
         </p>

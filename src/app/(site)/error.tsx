@@ -6,7 +6,7 @@ import { Container } from "@/components/common/container";
 export default function SiteError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <Container size="narrow" className="py-32 text-center">
-      <p className="font-mono text-sm tracking-[0.2em] text-brand-blue">ERROR</p>
+      <p className="text-sm text-brand-blue">ERROR</p>
       <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Something went wrong</h1>
       <p className="mx-auto mt-4 max-w-md text-muted-foreground">
         The page could not be loaded. Try again, or head back to the home page.

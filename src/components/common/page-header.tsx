@@ -8,14 +8,13 @@ type Props = {
   children?: React.ReactNode;
 };
 
-/** Hero block shared by all inner pages: consistent grid backdrop, eyebrow, h1. */
+/** Header block shared by all inner pages. */
 export function PageHeader({ eyebrow, title, description, children }: Props) {
   return (
-    <header className="relative overflow-hidden border-b border-border">
-      <div aria-hidden="true" className="bg-grid absolute inset-0" />
-      <Container className="relative py-20 sm:py-28">
+    <header className="bg-wash relative -mt-[var(--nav-h)] overflow-hidden border-b border-border">
+      <Container className="relative pt-[calc(var(--nav-h)+6rem)] pb-24 sm:pt-[calc(var(--nav-h)+8rem)] sm:pb-32">
         <SectionHeading as="h1" eyebrow={eyebrow} title={title} description={description} />
-        {children ? <div className="mt-8">{children}</div> : null}
+        {children ? <div className="mt-10">{children}</div> : null}
       </Container>
     </header>
   );

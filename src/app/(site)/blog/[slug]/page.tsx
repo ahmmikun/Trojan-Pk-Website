@@ -115,7 +115,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
         <div className="mt-10 border-t border-border pt-8"><ShareLinks url={url} title={post.title} /></div>
 
         <aside aria-label="About the author" className="mt-10 flex gap-4 rounded-lg border border-border bg-surface p-5">
-          <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-md border border-border bg-background font-mono text-sm text-muted-foreground">
+          <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-md border border-border bg-background text-sm text-muted-foreground">
             {initials(post.authorName)}
           </span>
           <div>

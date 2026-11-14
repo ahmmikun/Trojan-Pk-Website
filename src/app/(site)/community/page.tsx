@@ -71,7 +71,7 @@ export default async function CommunityPage() {
         )}
         {profiles.length > 0 ? (
           <div className="mt-10 flex flex-wrap items-center gap-4">
-            <span className="font-mono text-xs tracking-[0.16em] text-muted-foreground uppercase">Also find us on</span>
+            <span className="text-xs text-muted-foreground">Also find us on</span>
             <SocialIconLinks links={profiles} aria-label="Trojans PK profiles" />
           </div>
         ) : null}
@@ -94,7 +94,7 @@ export default async function CommunityPage() {
         <SectionHeading eyebrow="Technical interest groups" title="Learn alongside people with the same focus" />
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {interestGroups.map((g) => (
-            <li key={g.title} className="rounded-lg border border-border bg-surface p-6 transition-colors hover:border-white/20">
+            <li key={g.title} className="rounded-lg border border-border bg-surface p-6 transition-colors hover:border-foreground/20">
               <h3 className="text-base font-medium tracking-tight">{g.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{g.description}</p>
             </li>
@@ -120,7 +120,7 @@ export default async function CommunityPage() {
         <ol className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-2">
           {guidelines.map((g, i) => (
             <li key={g.title} className="bg-background p-7">
-              <p className="font-mono text-xs text-brand-blue">{String(i + 1).padStart(2, "0")}</p>
+              <p className="text-xs text-brand-blue">{String(i + 1).padStart(2, "0")}</p>
               <h3 className="mt-2 text-base font-medium tracking-tight">{g.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{g.description}</p>
             </li>

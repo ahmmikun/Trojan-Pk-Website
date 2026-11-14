@@ -19,7 +19,7 @@ export function FilterGroup({ label, options, value, onChange, allLabel = "All" 
   const btn = (active: boolean) =>
     cn(
       "rounded-md border px-3 py-1.5 text-sm transition-colors",
-      active ? "border-brand-blue/50 bg-brand-blue/15 text-foreground" : "border-border text-muted-foreground hover:border-white/20 hover:text-foreground",
+      active ? "border-brand-blue/50 bg-brand-blue/15 text-foreground" : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground",
     );
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
@@ -29,7 +29,7 @@ export function FilterGroup({ label, options, value, onChange, allLabel = "All" 
       {options.map((o) => (
         <button key={o.value} type="button" aria-pressed={value === o.value} onClick={() => onChange(value === o.value ? null : o.value)} className={btn(value === o.value)}>
           {o.label}
-          {o.count !== undefined ? <span className="ml-1.5 font-mono text-xs text-muted-foreground">{o.count}</span> : null}
+          {o.count !== undefined ? <span className="ml-1.5 text-xs text-muted-foreground">{o.count}</span> : null}
         </button>
       ))}
     </div>

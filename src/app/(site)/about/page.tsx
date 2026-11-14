@@ -48,11 +48,11 @@ export default async function AboutPage() {
       <Section id="mission-vision" className="bg-surface">
         <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-2">
           <div className="bg-background p-8 sm:p-10">
-            <p className="font-mono text-xs tracking-[0.18em] text-brand-blue uppercase">Our mission</p>
+            <p className="text-xs text-brand-blue">Our mission</p>
             <p className="mt-5 text-xl leading-relaxed text-foreground/90">{aboutCopy.mission}</p>
           </div>
           <div className="bg-background p-8 sm:p-10">
-            <p className="font-mono text-xs tracking-[0.18em] text-brand-blue uppercase">Our vision</p>
+            <p className="text-xs text-brand-blue">Our vision</p>
             <p className="mt-5 text-xl leading-relaxed text-foreground/90">{aboutCopy.vision}</p>
           </div>
         </div>

@@ -16,7 +16,7 @@ export function ShareLinks({ url, title }: Props) {
   ];
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="mr-1 font-mono text-xs tracking-[0.16em] text-muted-foreground uppercase">Share</span>
+      <span className="mr-1 text-xs text-muted-foreground">Share</span>
       {targets.map((s) => (
         <a
           key={s.label}
@@ -25,7 +25,7 @@ export function ShareLinks({ url, title }: Props) {
           rel="noopener noreferrer"
           aria-label={`${s.label} (opens in a new tab)`}
           title={s.label}
-          className="inline-flex size-9 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-white/20 hover:bg-white/5 hover:text-foreground"
+          className="inline-flex size-9 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground"
         >
           <BrandIcon icon={s.icon} className="size-4" />
         </a>

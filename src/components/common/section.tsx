@@ -1,3 +1,4 @@
+import { Reveal } from "@/components/common/reveal";
 import { cn } from "@/lib/utils";
 import { Container } from "./container";
 
@@ -9,7 +10,7 @@ type SectionProps = React.ComponentProps<"section"> & {
 
 export function Section({ className, bordered = true, containerSize, children, ...props }: SectionProps) {
   return (
-    <section className={cn("relative py-20 sm:py-28", bordered && "border-t border-border", className)} {...props}>
+    <section className={cn("relative py-24 sm:py-32", bordered && "border-t border-border", className)} {...props}>
       <Container size={containerSize}>{children}</Container>
     </section>
   );
@@ -25,25 +26,25 @@ type HeadingProps = {
   children?: React.ReactNode;
 };
 
-/** Consistent section header: mono eyebrow, strong title, muted description. */
+/** Consistent section header: small label, large tight title, muted description. */
 export function SectionHeading({ eyebrow, title, description, align = "left", as: Tag = "h2", className, children }: HeadingProps) {
   return (
-    <div className={cn("flex flex-col gap-4", align === "center" && "items-center text-center", className)}>
+    <Reveal immediate={Tag === "h1"} className={cn("flex flex-col gap-5", align === "center" && "items-center text-center", className)}>
       {eyebrow ? (
-        <p className="font-mono text-xs tracking-[0.18em] text-brand-blue uppercase">
-          <span aria-hidden="true" className="mr-2 text-muted-foreground">{"//"}</span>
+        <p className="flex items-center gap-2.5 text-sm text-muted-foreground">
+          <span aria-hidden="true" className="size-1.5 rounded-full bg-foreground/60" />
           {eyebrow}
         </p>
       ) : null}
-      <Tag className={cn("text-balance font-semibold tracking-tight", Tag === "h1" ? "text-4xl sm:text-5xl lg:text-6xl" : "text-3xl sm:text-4xl")}>
+      <Tag className={cn("text-balance font-medium", Tag === "h1" ? "text-5xl sm:text-6xl lg:text-7xl" : "text-4xl sm:text-5xl")}>
         {title}
       </Tag>
       {description ? (
-        <p className={cn("max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg", align === "center" && "mx-auto")}>
+        <p className={cn("max-w-2xl text-pretty text-lg leading-snug text-muted-foreground sm:text-xl", align === "center" && "mx-auto")}>
           {description}
         </p>
       ) : null}
       {children}
-    </div>
+    </Reveal>
   );
 }

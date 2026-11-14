@@ -1,10 +1,13 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 /**
  * Security headers applied to every response. The CSP allows 'unsafe-inline'
- * for scripts and styles because Next.js inlines hydration data. Everything
- * else is limited to the site's own origin. If you add third-party scripts
- * (analytics, embeds), extend this policy.
+ * for scripts and styles because Next.js inlines hydration data. 'unsafe-eval'
+ * is added only in development, where React uses eval() for debugging; production
+ * never allows it. Everything else is limited to the site's own origin. If you
+ * add third-party scripts (analytics, embeds), extend this policy.
  */
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -15,8 +18,7 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
   {
     key: "Content-Security-Policy",
-    value:
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+    value: `default-src 'self'; script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'${isDev ? " ws:" : ""}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'${isDev ? "" : "; upgrade-insecure-requests"}`,
   },
 ];
 

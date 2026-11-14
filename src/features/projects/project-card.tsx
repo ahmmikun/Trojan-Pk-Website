@@ -13,7 +13,7 @@ export function ProjectCard({ project, className }: { project: Project; classNam
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface transition-colors hover:border-white/20 hover:bg-surface-2",
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-500 ease-[var(--ease-premium)] hover:-translate-y-1 hover:border-foreground/25 hover:bg-surface-2",
         className,
       )}
     >

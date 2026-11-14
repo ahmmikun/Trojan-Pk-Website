@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 function List({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <h3 className="font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">{title}</h3>
+      <h3 className="text-xs text-muted-foreground">{title}</h3>
       <ul className="mt-4 space-y-3">
         {items.map((i) => (
           <li key={i} className="flex gap-3 text-sm text-muted-foreground">
@@ -57,7 +57,7 @@ export default async function JoinPage() {
               <ol className="mt-6 space-y-5">
                 {joinCopy.howItWorks.map((s, i) => (
                   <li key={s.step} className="flex gap-4">
-                    <span className="font-mono text-sm text-brand-blue">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="text-sm text-brand-blue">{String(i + 1).padStart(2, "0")}</span>
                     <div>
                       <p className="text-sm font-medium">{s.step}</p>
                       <p className="mt-1 text-sm text-muted-foreground">{s.detail}</p>

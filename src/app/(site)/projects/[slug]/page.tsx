@@ -115,7 +115,7 @@ export default async function ProjectPage({ params }: PageProps<"/projects/[slug
           </dl>
           {project.technologies.length > 0 ? (
             <div className="mt-6">
-              <h2 className="font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">Technologies</h2>
+              <h2 className="text-xs text-muted-foreground">Technologies</h2>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {project.technologies.map((t) => (
                   <li key={t}><Chip>{t}</Chip></li>

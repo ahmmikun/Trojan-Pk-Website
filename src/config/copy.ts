@@ -17,38 +17,45 @@ import {
 
 /** Editorial copy shared across pages. Projects, events, people, stats and blog posts live in src/data and content/blog. */
 
-export type FocusArea = { title: string; description: string; icon: LucideIcon };
+/** `image` is an illustrative stock photo (Unsplash), not a photo of a Trojans PK event. */
+export type FocusArea = { title: string; description: string; icon: LucideIcon; image: string };
 
 export const focusAreas: FocusArea[] = [
   {
     title: "Full-Stack Development",
     description: "Design and ship complete web products, from interface to database, with modern tooling.",
     icon: Code2,
+    image: "/samples/focus/fullstack.jpg",
   },
   {
     title: "AI & Machine Learning",
     description: "Explore, prototype and apply machine learning to problems that matter locally.",
     icon: BrainCircuit,
+    image: "/samples/focus/ai.jpg",
   },
   {
     title: "Open Source",
     description: "Contribute to real repositories, learn collaborative workflows and give back to the ecosystem.",
     icon: GitBranch,
+    image: "/samples/focus/opensource.jpg",
   },
   {
     title: "Hackathons & Competitions",
     description: "Team up, build under pressure and represent Pakistan's developers on bigger stages.",
     icon: Trophy,
+    image: "/samples/focus/hackathons.jpg",
   },
   {
     title: "Software Engineering & Product",
     description: "Learn how good software is planned, structured, tested and turned into useful products.",
     icon: Layers,
+    image: "/samples/focus/engineering.jpg",
   },
   {
     title: "Networking & Learning",
     description: "Share knowledge, find collaborators and grow alongside people who build.",
     icon: Users,
+    image: "/samples/focus/networking.jpg",
   },
 ];
 

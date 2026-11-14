@@ -7,7 +7,7 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <Navbar socialLinks={socialLinks} />
-      <main id="main" className="flex-1">
+      <main id="main" className="flex-1 pt-[var(--nav-h)]">
         {children}
       </main>
       <Footer />

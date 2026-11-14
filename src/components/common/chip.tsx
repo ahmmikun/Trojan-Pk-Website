@@ -2,14 +2,14 @@ import { cn } from "@/lib/utils";
 
 type Props = React.ComponentProps<"span"> & { tone?: "default" | "accent" | "success" };
 
-/** Small mono label for technologies, categories and statuses. */
+/** Small label for technologies, categories and statuses. */
 export function Chip({ className, tone = "default", ...props }: Props) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded border px-2 py-0.5 font-mono text-[11px] leading-5 tracking-wide",
-        tone === "default" && "border-border bg-white/[0.03] text-muted-foreground",
-        tone === "accent" && "border-brand-blue/40 bg-brand-blue/10 text-[#8fb0ff]",
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs leading-5",
+        tone === "default" && "border-border bg-foreground/[0.03] text-muted-foreground",
+        tone === "accent" && "border-foreground/15 bg-foreground/[0.06] text-foreground",
         tone === "success" && "border-success/30 bg-success/10 text-success",
         className,
       )}

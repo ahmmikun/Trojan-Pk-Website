@@ -23,12 +23,12 @@ export function Logo({ className, markOnly = false, href = "/" }: Props) {
         width={23}
         height={28}
         priority
-        className="h-7 w-auto"
+        className="h-7 w-[23px]"
       />
       {markOnly ? (
         <span className="sr-only">{siteConfig.name}</span>
       ) : (
-        <span className="text-[15px] font-semibold tracking-[0.14em] uppercase">
+        <span className="text-[15px] font-semibold">
           Trojans<span className="text-muted-foreground"> PK</span>
         </span>
       )}

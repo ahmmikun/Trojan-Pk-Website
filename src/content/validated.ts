@@ -1,6 +1,8 @@
 import type { z } from "zod";
 import { achievementsData } from "@/data/achievements";
 import { eventsData } from "@/data/events";
+import { sampleEventsData } from "@/data/sample-events";
+import { showSamples } from "./visibility";
 import { projectsData } from "@/data/projects";
 import { statsData } from "@/data/stats";
 import { teamData } from "@/data/team";
@@ -49,7 +51,7 @@ export function parseList<S extends z.ZodType>(
 
 // Typed to the hand-written content types so the schemas and types cannot drift apart.
 export const allProjects = parseList("src/data/projects.ts", projectSchema, projectsData, (p) => p.slug) as typeof projectsData;
-export const allEvents = parseList("src/data/events.ts", eventSchema, eventsData, (e) => e.slug) as typeof eventsData;
+export const allEvents = parseList("src/data/events.ts", eventSchema, [...eventsData, ...(showSamples ? sampleEventsData : [])], (e) => e.slug) as typeof eventsData;
 export const allTeam = parseList("src/data/team.ts", teamMemberSchema, teamData, (m) => m.slug) as typeof teamData;
 export const allTestimonials = parseList("src/data/testimonials.ts", testimonialSchema, testimonialsData, (t) => t.id) as typeof testimonialsData;
 export const allAchievements = parseList("src/data/achievements.ts", achievementSchema, achievementsData, (a) => a.slug) as typeof achievementsData;

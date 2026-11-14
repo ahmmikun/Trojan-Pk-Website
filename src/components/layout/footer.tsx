@@ -28,7 +28,7 @@ export async function Footer() {
           </div>
 
           <nav aria-label="Footer">
-            <h2 className="font-mono text-xs tracking-[0.18em] text-foreground uppercase">Explore</h2>
+            <h2 className="text-xs text-foreground">Explore</h2>
             <ul className="mt-5 space-y-3">
               {mainNav.map((item) => (
                 <li key={item.href}>
@@ -42,7 +42,7 @@ export async function Footer() {
           </nav>
 
           <div>
-            <h2 className="font-mono text-xs tracking-[0.18em] text-foreground uppercase">Join the conversation</h2>
+            <h2 className="text-xs text-foreground">Join the conversation</h2>
             {invites.length > 0 ? (
               <ul className="mt-5 space-y-3">
                 {invites.map((l) => (
@@ -60,7 +60,7 @@ export async function Footer() {
           </div>
 
           <div>
-            <h2 className="font-mono text-xs tracking-[0.18em] text-foreground uppercase">Contact</h2>
+            <h2 className="text-xs text-foreground">Contact</h2>
             <ul className="mt-5 space-y-3">
               {email ? (
                 <li>

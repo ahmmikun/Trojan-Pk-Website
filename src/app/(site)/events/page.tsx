@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { EmptyState } from "@/components/common/empty-state";
+import { MediaGrid } from "@/components/common/media-grid";
 import { PageHeader } from "@/components/common/page-header";
 import { Section, SectionHeading } from "@/components/common/section";
 import { SocialIconLinks } from "@/components/social/social-icon-links";
-import { EventCard } from "@/features/events/event-card";
+import { eventToMedia } from "@/features/events/event-card";
 import { getEvents } from "@/content/events";
 import { getInviteLinks } from "@/content/social";
 import { EVENT_TYPES } from "@/types/content";
@@ -25,31 +26,23 @@ export default async function EventsPage() {
         description={`${EVENT_TYPES.map((t) => t.label.toLowerCase()).join(", ")}: where Trojans PK comes together.`}
       />
 
-      <Section bordered={false} id="upcoming">
+      <Section bordered={false} id="upcoming" containerSize="wide">
         <SectionHeading eyebrow="Upcoming" title="What is next" />
         {upcoming.length > 0 ? (
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {upcoming.map((e) => (
-              <li key={e.slug}><EventCard event={e} /></li>
-            ))}
-          </ul>
+          <MediaGrid className="mt-14" items={upcoming.map(eventToMedia)} priorityFirst />
         ) : (
-          <EmptyState className="mt-10" title="No upcoming events right now" description="New events are announced in our community channels first.">
+          <EmptyState className="mt-14" title="No upcoming events right now" description="New events are announced in our community channels first.">
             <SocialIconLinks links={invites} aria-label="Community channels" />
           </EmptyState>
         )}
       </Section>
 
-      <Section id="previous" className="bg-surface">
+      <Section id="previous" containerSize="wide">
         <SectionHeading eyebrow="Previous" title="Where we have been" />
         {past.length > 0 ? (
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {past.map((e) => (
-              <li key={e.slug}><EventCard event={e} /></li>
-            ))}
-          </ul>
+          <MediaGrid className="mt-14" items={past.map(eventToMedia)} />
         ) : (
-          <EmptyState className="mt-10" title="No previous events yet" />
+          <EmptyState className="mt-14" title="No previous events yet" />
         )}
       </Section>
     </>

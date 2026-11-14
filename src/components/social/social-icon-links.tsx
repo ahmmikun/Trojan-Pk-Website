@@ -30,7 +30,7 @@ export function SocialIconLinks({ links, only, size = "md", className, ...aria }
             title={link.label}
             className={cn(
               "inline-flex items-center justify-center rounded-md border border-border text-muted-foreground transition-colors",
-              "hover:border-white/20 hover:bg-white/5 hover:text-foreground",
+              "hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground",
               size === "sm" ? "size-8" : "size-10",
             )}
           >

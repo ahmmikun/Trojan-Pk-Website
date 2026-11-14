@@ -68,7 +68,7 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
 
       <Container className="py-10">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-xs tracking-[0.16em] text-brand-blue uppercase">{eventTypeLabel(event.type)}</span>
+          <span className="text-xs text-brand-blue">{eventTypeLabel(event.type)}</span>
           <EventStatusChip status={event.status} />
         </div>
         <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">{event.title}</h1>

@@ -2,6 +2,7 @@ import { ArrowUpRight, CalendarDays, MapPin, UserRound } from "lucide-react";
 import Link from "next/link";
 import { Chip } from "@/components/common/chip";
 import { Cover } from "@/components/common/cover";
+import type { MediaItem } from "@/components/common/media-grid";
 import { eventDateLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { EVENT_TYPES, type CommunityEvent } from "@/types/content";
@@ -19,12 +20,25 @@ export function EventStatusChip({ status }: { status: CommunityEvent["status"] }
   return <Chip tone={status === "UPCOMING" || status === "ONGOING" ? "success" : "default"}>{statusLabel[status]}</Chip>;
 }
 
+/** Maps an event to a tile for <MediaGrid>. */
+export function eventToMedia(event: CommunityEvent): MediaItem {
+  const open = event.status === "UPCOMING" || event.status === "ONGOING";
+  return {
+    href: `/events/${event.slug}`,
+    title: event.title,
+    subtitle: [eventTypeLabel(event.type), event.location].filter(Boolean).join(" · "),
+    meta: event.startsAt ? `© ${event.startsAt.getFullYear()}` : null,
+    image: event.image,
+    badge: open ? statusLabel[event.status] : null,
+  };
+}
+
 export function EventCard({ event, className }: { event: CommunityEvent; className?: string }) {
   const date = eventDateLabel(event);
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface transition-colors hover:border-white/20 hover:bg-surface-2",
+        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-500 ease-[var(--ease-premium)] hover:-translate-y-1 hover:border-foreground/25 hover:bg-surface-2",
         className,
       )}
     >

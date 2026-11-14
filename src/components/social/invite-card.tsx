@@ -11,7 +11,7 @@ export function InviteCard({ link, className }: { link: ResolvedSocialLink; clas
   return (
     <article
       className={cn(
-        "group flex h-full flex-col rounded-lg border border-border bg-surface p-6 transition-colors hover:border-white/20 hover:bg-surface-2",
+        "group flex h-full flex-col rounded-xl border border-border bg-surface p-6 transition-all duration-500 ease-[var(--ease-premium)] hover:-translate-y-1 hover:border-foreground/25 hover:bg-surface-2",
         className,
       )}
     >

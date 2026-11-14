@@ -9,7 +9,7 @@ export const blogCategoryName = (slug: BlogPost["categorySlug"]) => BLOG_CATEGOR
 export function PostCard({ post }: { post: BlogPost }) {
   const category = blogCategoryName(post.categorySlug);
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface transition-colors hover:border-white/20 hover:bg-surface-2">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-500 ease-[var(--ease-premium)] hover:-translate-y-1 hover:border-foreground/25 hover:bg-surface-2">
       <Cover src={post.coverImage} title={post.title} label={category} className="border-b border-border" />
       <div className="flex flex-1 flex-col p-5">
         <Chip className="self-start">{category}</Chip>

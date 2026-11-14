@@ -102,7 +102,18 @@ try {
       if (overflow.scrollWidth > overflow.clientWidth + 1) problems.push(`horizontal overflow ${overflow.scrollWidth}>${overflow.clientWidth} (${overflow.culprits.join(", ")})`);
 
       check(`${vp.name.padEnd(7)} ${route}`, problems.length === 0, problems.join("; "));
-      if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `${vp.name}_${slug(route)}.png`), fullPage: true });
+      if (SHOTS) {
+        // Play the scroll-triggered reveals before capturing.
+        await page.evaluate(async () => {
+          for (let y = 0; y <= document.body.scrollHeight; y += 400) {
+            window.scrollTo({ top: y, behavior: "instant" });
+            await new Promise((r) => setTimeout(r, 120));
+          }
+          window.scrollTo({ top: 0, behavior: "instant" });
+        });
+        await page.waitForTimeout(1200);
+        await page.screenshot({ path: path.join(SHOTS, `${vp.name}_${slug(route)}.png`), fullPage: true });
+      }
       await page.close();
     }
     await context.close();
@@ -110,17 +121,26 @@ try {
 
   // ======== 2. accessibility (axe-core) ======================================
   console.log("\n== Accessibility (axe-core, WCAG 2.0/2.1 A + AA) ==");
-  for (const vp of [viewports[0], viewports[2]]) {
+  for (const [vp, theme] of [viewports[0], viewports[2]].flatMap((v) => ["dark", "light"].map((t) => [v, t]))) {
     const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
     for (const route of routes) {
       const page = await context.newPage();
       await page.goto(BASE + route, { waitUntil: "networkidle" });
-      await page.waitForTimeout(1200); // finish fade-ins so contrast is measured on final colors
+      // Scroll through the page so scroll-triggered reveals have played, then measure contrast on final colors.
+      await page.evaluate(async () => {
+        for (let y = 0; y <= document.body.scrollHeight; y += 500) {
+          window.scrollTo({ top: y, behavior: "instant" });
+          await new Promise((r) => setTimeout(r, 120));
+        }
+        window.scrollTo({ top: 0, behavior: "instant" });
+      });
+      if (theme === "light") await page.evaluate(() => document.documentElement.classList.remove("dark"));
+      await page.waitForTimeout(1500);
       await page.addScriptTag({ content: axeSource });
       const result = await page.evaluate(() =>
         axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } }).then((r) => r.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, count: v.nodes.length, sample: v.nodes.slice(0, 2).map((n) => `${n.target.join(" ")} :: ${(n.failureSummary ?? "").replace(/\s+/g, " ").slice(0, 160)}`) }))),
       );
-      check(`a11y ${vp.name.padEnd(7)} ${route}`, result.length === 0, result.map((v) => `${v.id}[${v.impact}] x${v.count}: ${v.sample.join(" | ")}`).join(" ;; "));
+      check(`a11y ${theme.padEnd(5)} ${vp.name.padEnd(7)} ${route}`, result.length === 0, result.map((v) => `${v.id}[${v.impact}] x${v.count}: ${v.sample.join(" | ")}`).join(" ;; "));
       await page.close();
     }
     await context.close();
@@ -140,7 +160,7 @@ try {
     const dialog = page.getByRole("dialog");
     await dialog.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
     check("mobile: menu opens as a dialog", await dialog.isVisible());
-    const labels = await dialog.locator("nav a").allInnerTexts();
+    const labels = (await dialog.locator("nav a").allInnerTexts()).map((x) => x.replace(/\s*\d+\s*$/, "").trim());
     check("mobile: menu lists all 7 links", labels.length === 7 && ["Home", "About", "Community", "Projects", "Events", "Team", "Blog"].every((l) => labels.some((x) => x.trim() === l)), labels.join(","));
     check("mobile: menu has Join CTA", (await dialog.getByRole("link", { name: "Join Community" }).count()) === 1);
     await page.keyboard.press("Escape");
@@ -160,9 +180,9 @@ try {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await context.newPage();
     await page.goto(BASE + "/about", { waitUntil: "networkidle" });
-    const current = await page.locator('nav[aria-label="Main"] a[aria-current="page"]').allInnerTexts();
+    const current = (await page.locator('nav[aria-label="Main"] a[aria-current="page"]').allInnerTexts()).map((x) => x.replace(/\s*\d+\s*$/, "").trim());
     check("desktop: active nav item is About", current.length === 1 && current[0].trim() === "About", current.join(","));
-    check("desktop: navbar is sticky", (await page.evaluate(() => getComputedStyle(document.querySelector("header")).position)) === "sticky");
+    check("desktop: navbar is fixed over the page", (await page.evaluate(() => getComputedStyle(document.querySelector("header")).position)) === "fixed");
 
     await page.goto(BASE + "/", { waitUntil: "networkidle" });
     await page.keyboard.press("Tab");
@@ -238,8 +258,8 @@ try {
     await page.waitForTimeout(600);
     const op = await target.evaluate((el) => getComputedStyle(el.closest(".reveal-in-view") ?? el).opacity);
     check("no-JS: scroll-revealed mission text is visible once in view", op === "1", op);
-    const hiddenInHtml = await page.evaluate(() => [...document.querySelectorAll('[style*="opacity:0"], [style*="opacity: 0"]')].filter((el) => !el.closest('[aria-hidden="true"]')).length);
-    check("no-JS: no meaningful content is shipped with inline opacity:0", hiddenInHtml === 0, String(hiddenInHtml));
+    const hiddenInHtml = await page.evaluate(() => [...document.querySelectorAll("[data-fm]")].filter((el) => getComputedStyle(el).opacity !== "1" && !el.closest('[aria-hidden="true"]')).length);
+    check("no-JS: no animated content stays hidden", hiddenInHtml === 0, String(hiddenInHtml));
     await context.close();
   });
 
@@ -250,7 +270,7 @@ try {
     await page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
     const op = await page.evaluate(() => getComputedStyle(document.querySelector("h1")).opacity);
     check("reduced motion: hero heading is immediately fully visible", op === "1", op);
-    check("reduced motion: grid drift animation is neutralised", await page.evaluate(() => { const d = parseFloat(getComputedStyle(document.querySelector(".animate-grid-drift")).animationDuration); return d < 0.1; }));
+    check("reduced motion: Lenis smooth scrolling is not started", await page.evaluate(() => !document.documentElement.classList.contains("lenis")));
     await context.close();
   });
 
@@ -283,6 +303,55 @@ try {
     await page.goto(BASE + "/", { waitUntil: "networkidle" });
     const raw = await page.evaluate(() => [...document.images].filter((i) => /^\/brand\//.test(new URL(i.currentSrc || i.src).pathname)).length);
     check("images: no raw /public image is requested directly", raw === 0, String(raw));
+    await context.close();
+  });
+  // 3h. theme toggle + Lenis smooth scrolling
+  await guard("3h. theme toggle + smooth scrolling", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(BASE + "/", { waitUntil: "networkidle" });
+    const isDark = () => page.evaluate(() => document.documentElement.classList.contains("dark"));
+    check("theme: dark is the default", await isDark());
+    await page.getByRole("button", { name: "Switch to light theme" }).click();
+    check("theme: toggle switches to light", !(await isDark()));
+    const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    check("theme: light background is light", bg === "rgb(250, 250, 248)", bg);
+    await page.reload({ waitUntil: "networkidle" });
+    check("theme: light choice persists after reload (no flash)", !(await isDark()));
+    await page.getByRole("button", { name: "Switch to dark theme" }).click();
+    check("theme: toggle switches back to dark", await isDark());
+    check("lenis: smooth scrolling is active", await page.evaluate(() => document.documentElement.classList.contains("lenis")));
+    await page.mouse.move(640, 400);
+    await page.mouse.wheel(0, 900);
+    await page.waitForTimeout(1200);
+    const y = await page.evaluate(() => window.scrollY);
+    check("lenis: mouse wheel scrolls the page", y > 200, String(y));
+    await context.close();
+  });
+  // 3i. parallax images
+  await guard("3i. parallax images", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(BASE + "/events", { waitUntil: "networkidle" });
+    const layers = page.locator("article img").first().locator("xpath=..");
+    if ((await layers.count()) === 0) {
+      notes.push("parallax: no event images on /events (sample content off), check skipped");
+    } else {
+      await layers.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+      const before = await layers.evaluate((el) => getComputedStyle(el).transform);
+      await page.mouse.move(640, 400);
+      await page.mouse.wheel(0, 500);
+      await page.waitForTimeout(1200);
+      const after = await layers.evaluate((el) => getComputedStyle(el).transform);
+      check("parallax: image layer moves while scrolling", before !== after, `${before} -> ${after}`);
+      const covered = await layers.evaluate((el) => {
+        const frame = el.parentElement.getBoundingClientRect();
+        const img = el.getBoundingClientRect();
+        return img.top <= frame.top + 0.5 && img.bottom >= frame.bottom - 0.5;
+      });
+      check("parallax: image always covers its frame (no gaps)", covered);
+    }
     await context.close();
   });
 } finally {
