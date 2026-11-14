@@ -2,9 +2,9 @@ import type { CommunityEvent } from "@/types/content";
 
 /**
  * SAMPLE EVENTS: placeholder content for designing and reviewing the site.
- * These events did not happen. They are shown only in development and on
- * Vercel preview deployments, never on production (see src/content/visibility.ts).
- * Delete this file (and public/samples/) once real events exist.
+ * These events did not happen. They are shown on every deployment, production
+ * included; set HIDE_SAMPLE_CONTENT=1 to hide them (see src/content/visibility.ts).
+ * Delete this file (and public/samples/events/) once real events exist.
  *
  * Photos: Unsplash (https://unsplash.com/license), stored in public/samples/events/.
  */
