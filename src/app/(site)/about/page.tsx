@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/common/button-link";
+import { NumberedList } from "@/components/common/numbered-list";
 import { PageHeader } from "@/components/common/page-header";
+import { Reveal } from "@/components/common/reveal";
 import { Section, SectionHeading } from "@/components/common/section";
 import { Timeline } from "@/components/common/timeline";
+import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { aboutCopy, coreValues } from "@/config/copy";
 import { FinalCta } from "@/features/home/sections";
 import { TeamPreviewCard } from "@/features/team/team-card";
@@ -16,6 +19,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/about" },
 };
 
+/**
+ * Flow: identity -> purpose -> story -> proof (milestones) -> principles -> people -> ask.
+ * The two narrative sections (story, milestones) sit together; text-only
+ * blocks are split up by the mission/vision panels and the team portraits.
+ */
 export default async function AboutPage() {
   const [team, achievement] = await Promise.all([getTeam(), getFeaturedAchievement()]);
 
@@ -27,81 +35,88 @@ export default async function AboutPage() {
         description="Trojans PK is a Pakistan-based developer, technology and open-source community. Not an agency. Not a company."
       />
 
+      {/* 1. Identity: one large statement */}
       <Section bordered={false} id="who-we-are">
-        <div className="grid gap-12 lg:grid-cols-12">
-          <SectionHeading className="lg:col-span-4" eyebrow="Who we are" title="Builders, learners, collaborators." />
-          <p className="text-lg leading-relaxed text-muted-foreground lg:col-span-8">{aboutCopy.whoWeAre}</p>
+        <div className="grid gap-10 lg:grid-cols-12">
+          <Reveal className="lg:col-span-3">
+            <p className="text-sm text-muted-foreground">Who we are</p>
+          </Reveal>
+          <Reveal className="lg:col-span-9">
+            <p className="text-3xl leading-[1.15] font-medium tracking-tight text-balance sm:text-4xl lg:text-5xl">{aboutCopy.whoWeAre}</p>
+          </Reveal>
         </div>
       </Section>
 
+      {/* 2. Purpose */}
+      <Section id="mission-vision">
+        <Stagger as="div" className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2">
+          {[
+            { label: "Mission", body: aboutCopy.mission },
+            { label: "Vision", body: aboutCopy.vision },
+          ].map((b, i) => (
+            <StaggerItem as="div" key={b.label} className="flex min-h-80 flex-col justify-between bg-background p-8 sm:p-12">
+              <p className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="tabular font-mono text-xs">{String(i + 1).padStart(2, "0")}</span>
+                Our {b.label.toLowerCase()}
+              </p>
+              <p className="mt-16 text-2xl leading-[1.2] font-medium tracking-tight sm:text-3xl">{b.body}</p>
+            </StaggerItem>
+          ))}
+        </Stagger>
+      </Section>
+
+      {/* 3. Story */}
       <Section id="story">
         <div className="grid gap-12 lg:grid-cols-12">
-          <SectionHeading className="lg:col-span-4" eyebrow="Our story" title="Learning through practical projects." />
-          <div className="space-y-5 text-lg leading-relaxed text-muted-foreground lg:col-span-8">
+          <SectionHeading className="lg:col-span-5" eyebrow="Our story" title="Learning through practical projects." />
+          <Reveal className="space-y-6 text-lg leading-snug text-muted-foreground sm:text-xl lg:col-span-6 lg:col-start-7">
             {aboutCopy.story.map((p) => (
               <p key={p}>{p}</p>
             ))}
-          </div>
+          </Reveal>
         </div>
       </Section>
 
-      <Section id="mission-vision" className="bg-surface">
-        <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-2">
-          <div className="bg-background p-8 sm:p-10">
-            <p className="text-xs text-brand-blue">Our mission</p>
-            <p className="mt-5 text-xl leading-relaxed text-foreground/90">{aboutCopy.mission}</p>
-          </div>
-          <div className="bg-background p-8 sm:p-10">
-            <p className="text-xs text-brand-blue">Our vision</p>
-            <p className="mt-5 text-xl leading-relaxed text-foreground/90">{aboutCopy.vision}</p>
-          </div>
-        </div>
-      </Section>
-
-      <Section id="values">
-        <SectionHeading eyebrow="Core values" title="What we hold ourselves to" />
-        <ul className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-          {coreValues.map((v) => (
-            <li key={v.title} className="group bg-background p-7 transition-colors hover:bg-surface-2">
-              <v.icon aria-hidden="true" className="size-5 text-brand-blue" />
-              <h3 className="mt-5 text-lg font-medium tracking-tight">{v.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{v.description}</p>
-            </li>
-          ))}
-        </ul>
-      </Section>
-
+      {/* 4. Proof: the story continues as milestones */}
       {achievement ? (
-        <Section id="journey" className="bg-surface">
+        <Section id="journey">
           <div className="grid gap-12 lg:grid-cols-12">
             <SectionHeading
-              className="lg:col-span-5"
+              className="lg:col-span-4"
               eyebrow="Community journey"
               title="Important milestones"
               description="Verified milestones from our journey so far. More will be added as the community grows."
             />
-            <div className="lg:col-span-7">
+            <Reveal className="lg:col-span-7 lg:col-start-6">
               <Timeline
                 ariaLabel="Community milestones"
                 items={[{ label: "Achievement", title: achievement.title, detail: `${achievement.subtitle}. ${achievement.projectName}: ${achievement.projectSummary}`, date: null }, ...achievement.timeline]}
               />
-            </div>
+            </Reveal>
           </div>
         </Section>
       ) : null}
 
+      {/* 5. Principles */}
+      <Section id="values">
+        <SectionHeading eyebrow="Core values" title="What we hold ourselves to" />
+        <NumberedList className="mt-16" items={coreValues} />
+      </Section>
+
+      {/* 6. People */}
       <Section id="leadership">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <SectionHeading eyebrow="Leadership" title="Meet the people leading Trojans PK" />
           <ButtonLink href="/team" variant="outline">Full team <ArrowRight /></ButtonLink>
         </div>
-        <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <Stagger className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {team.map((m) => (
-            <li key={m.slug}><TeamPreviewCard member={m} /></li>
+            <StaggerItem key={m.slug}><TeamPreviewCard member={m} /></StaggerItem>
           ))}
-        </ul>
+        </Stagger>
       </Section>
 
+      {/* 7. Ask */}
       <FinalCta />
     </>
   );

@@ -1,18 +1,18 @@
 import type { TeamMember } from "@/types/content";
 
 /**
- * Initial profiles from the brief. Bios are intentionally limited to the
- * confirmed role; add photos (files in /public) and social links here
- * (null values are hidden in the UI).
+ * Team profiles. Bios are intentionally limited to the confirmed role; add
+ * photos (files in /public) and social links here (null values are hidden in
+ * the UI). `order` controls the display order.
  */
 export const teamData: TeamMember[] = [
   {
-    slug: "professor-abdullah",
-    name: "Professor Abdullah",
-    role: "Founder & AI/ML Engineer",
-    bio: "Founder of Trojans PK. Works on artificial intelligence and machine learning, and leads the community's direction.",
-    photo: null,
-    interests: ["AI & Machine Learning"],
+    slug: "salman-ahmad",
+    name: "Salman Ahmad",
+    role: "Founder & Tech Lead",
+    bio: "Founder of Trojans PK. Leads the community's technical direction and the projects members build together.",
+    photo: "/salman.jpg",
+    interests: ["Full-Stack Development", "AI & Machine Learning"],
     github: null,
     linkedin: null,
     website: null,
@@ -20,12 +20,13 @@ export const teamData: TeamMember[] = [
     order: 0,
   },
   {
-    slug: "salman-ahmad",
-    name: "Salman Ahmad",
-    role: "Co-Founder & Full Stack AI Engineer",
-    bio: "Co-founder of Trojans PK. Builds full-stack products with artificial intelligence at their core.",
-    photo: null,
-    interests: ["Full-Stack Development", "AI & Machine Learning"],
+    slug: "professor-abdullah",
+    name: "Professor Abdullah",
+    role: "Community Operations Lead",
+    bio: "Leads community operations at Trojans PK, keeping events, channels and member activity running smoothly.",
+    // Sample stock photo (Unsplash), not Professor Abdullah. Replace with a real portrait.
+    photo: "/samples/team/masked-hacker.jpg",
+    interests: ["AI & Machine Learning"],
     github: null,
     linkedin: null,
     website: null,
@@ -35,10 +36,10 @@ export const teamData: TeamMember[] = [
   {
     slug: "talha-irfan",
     name: "Talha Irfan",
-    role: "Core Team Member & Product Engineer",
-    bio: "Core team member at Trojans PK, focused on turning ideas into well-built products.",
-    photo: null,
-    interests: ["Product Development", "Software Engineering"],
+    role: "AI Community Lead",
+    bio: "Leads the AI community at Trojans PK. Uses AI to solve real problems and works on AI-orchestrated development, where developers direct AI agents to plan, build and ship software.",
+    photo: "/talha.jpeg",
+    interests: ["AI & Machine Learning", "AI-Orchestrated Development", "Problem Solving with AI"],
     github: null,
     linkedin: null,
     website: null,

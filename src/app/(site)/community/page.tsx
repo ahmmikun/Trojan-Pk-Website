@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import { Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/common/button-link";
+import { Checklist } from "@/components/common/checklist";
 import { EmptyState } from "@/components/common/empty-state";
 import { JsonLd } from "@/components/common/json-ld";
+import { NumberedList } from "@/components/common/numbered-list";
 import { PageHeader } from "@/components/common/page-header";
+import { Reveal } from "@/components/common/reveal";
 import { Section, SectionHeading } from "@/components/common/section";
+import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { InviteCard } from "@/components/social/invite-card";
 import { SocialIconLinks } from "@/components/social/social-icon-links";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -25,19 +29,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/community" },
 };
 
-function Checklist({ items }: { items: string[] }) {
-  return (
-    <ul className="space-y-3">
-      {items.map((i) => (
-        <li key={i} className="flex gap-3 text-muted-foreground">
-          <Check aria-hidden="true" className="mt-1 size-4 shrink-0 text-brand-blue" />
-          <span>{i}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default async function CommunityPage() {
   const [invites, profiles] = await Promise.all([getInviteLinks(), getProfileLinks()]);
 
@@ -55,89 +46,70 @@ export default async function CommunityPage() {
         title="Find your people. Build together."
         description="Trojans PK is where developers, students and designers across Pakistan ask questions, share work and team up on real projects."
       >
-        <ButtonLink href="/join" emphasis>Apply for membership</ButtonLink>
+        <ButtonLink href="/join" emphasis>Apply for membership <ArrowRight /></ButtonLink>
       </PageHeader>
 
       <Section bordered={false} id="join-channels">
         <SectionHeading eyebrow="Join the conversation" title="Pick your platform" description="Join any or all of our community channels." />
         {invites.length > 0 ? (
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <Stagger as="div" className="mt-16 grid gap-5 md:grid-cols-3">
             {invites.map((l) => (
-              <InviteCard key={l.id} link={l} />
+              <StaggerItem as="div" key={l.id}><InviteCard link={l} /></StaggerItem>
             ))}
-          </div>
+          </Stagger>
         ) : (
-          <EmptyState className="mt-12" title="Community channels are being set up" description="Invitation links will appear here once they are configured." />
+          <EmptyState className="mt-16" title="Community channels are being set up" description="Invitation links will appear here once they are configured." />
         )}
         {profiles.length > 0 ? (
-          <div className="mt-10 flex flex-wrap items-center gap-4">
-            <span className="text-xs text-muted-foreground">Also find us on</span>
+          <Reveal className="mt-10 flex flex-wrap items-center gap-4">
+            <span className="text-sm text-muted-foreground">Also find us on</span>
             <SocialIconLinks links={profiles} aria-label="Trojans PK profiles" />
-          </div>
+          </Reveal>
         ) : null}
       </Section>
 
-      <Section id="why-join" className="bg-surface">
+      <Section id="why-join">
         <SectionHeading eyebrow="Why join" title="What membership gives you" />
-        <ul className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
-          {communityBenefits.map((b) => (
-            <li key={b.title} className="bg-background p-7">
-              <b.icon aria-hidden="true" className="size-5 text-brand-blue" />
-              <h3 className="mt-5 text-base font-medium tracking-tight">{b.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{b.description}</p>
-            </li>
-          ))}
-        </ul>
+        <NumberedList className="mt-16" variant="grid" columns={4} items={communityBenefits} />
       </Section>
 
       <Section id="interest-groups">
         <SectionHeading eyebrow="Technical interest groups" title="Learn alongside people with the same focus" />
-        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {interestGroups.map((g) => (
-            <li key={g.title} className="rounded-lg border border-border bg-surface p-6 transition-colors hover:border-foreground/20">
-              <h3 className="text-base font-medium tracking-tight">{g.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{g.description}</p>
-            </li>
-          ))}
-        </ul>
+        <NumberedList className="mt-16" items={interestGroups} />
       </Section>
 
-      <Section id="opportunities" className="bg-surface">
-        <div className="grid gap-12 lg:grid-cols-2">
+      <Section id="opportunities">
+        <div className="grid gap-16 lg:grid-cols-2">
           <div>
             <SectionHeading eyebrow="Collaboration" title="Work with other members" />
-            <div className="mt-8"><Checklist items={collaborationOpportunities} /></div>
+            <Reveal className="mt-10"><Checklist items={collaborationOpportunities} /></Reveal>
           </div>
           <div>
             <SectionHeading eyebrow="Open source" title="Contribute to real repositories" />
-            <div className="mt-8"><Checklist items={openSourceOpportunities} /></div>
+            <Reveal className="mt-10"><Checklist items={openSourceOpportunities} /></Reveal>
           </div>
         </div>
       </Section>
 
       <Section id="guidelines">
         <SectionHeading eyebrow="Community guidelines" title="How we treat each other" />
-        <ol className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-2">
-          {guidelines.map((g, i) => (
-            <li key={g.title} className="bg-background p-7">
-              <p className="text-xs text-brand-blue">{String(i + 1).padStart(2, "0")}</p>
-              <h3 className="mt-2 text-base font-medium tracking-tight">{g.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{g.description}</p>
-            </li>
-          ))}
-        </ol>
+        <NumberedList className="mt-16" variant="grid" columns={2} ordered items={guidelines} />
       </Section>
 
-      <Section id="faq" className="bg-surface" containerSize="narrow">
-        <SectionHeading eyebrow="FAQ" title="Frequently asked questions" />
-        <Accordion className="mt-10">
-          {faqs.map((f, i) => (
-            <AccordionItem key={f.q} value={`faq-${i}`}>
-              <AccordionTrigger>{f.q}</AccordionTrigger>
-              <AccordionContent>{f.a}</AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+      <Section id="faq">
+        <div className="grid gap-12 lg:grid-cols-12">
+          <SectionHeading className="lg:col-span-4" eyebrow="FAQ" title="Frequently asked questions" />
+          <Reveal className="lg:col-span-7 lg:col-start-6">
+            <Accordion className="border-t border-border">
+              {faqs.map((f, i) => (
+                <AccordionItem key={f.q} value={`faq-${i}`} className="border-b border-border">
+                  <AccordionTrigger className="py-6 text-lg font-medium tracking-tight hover:no-underline sm:text-xl">{f.q}</AccordionTrigger>
+                  <AccordionContent className="pb-6 text-base leading-snug text-muted-foreground">{f.a}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </Reveal>
+        </div>
       </Section>
 
       <FinalCta />

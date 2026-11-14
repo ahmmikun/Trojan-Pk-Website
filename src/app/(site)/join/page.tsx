@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
-import { ArrowUpRight, Check, Mail } from "lucide-react";
+import { ArrowUpRight, Mail } from "lucide-react";
 import Link from "next/link";
 import { ButtonLink } from "@/components/common/button-link";
+import { Checklist } from "@/components/common/checklist";
+import { NumberedList } from "@/components/common/numbered-list";
 import { PageHeader } from "@/components/common/page-header";
+import { Reveal } from "@/components/common/reveal";
 import { Section, SectionHeading } from "@/components/common/section";
+import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { InviteCard } from "@/components/social/invite-card";
 import { joinCopy } from "@/config/copy";
 import { siteConfig } from "@/config/site";
@@ -15,22 +19,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/join" },
 };
 
-function List({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div>
-      <h3 className="text-xs text-muted-foreground">{title}</h3>
-      <ul className="mt-4 space-y-3">
-        {items.map((i) => (
-          <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-            <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-blue" />
-            <span>{i}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export default async function JoinPage() {
   const [invites, email] = await Promise.all([getInviteLinks(), getSocialLink("email")]);
   const formUrl = siteConfig.applicationFormUrl;
@@ -41,73 +29,83 @@ export default async function JoinPage() {
         eyebrow="Join"
         title="Become part of Trojans PK."
         description="Tell us a bit about yourself. Every application is read and reviewed by the team."
-      />
+      >
+        {formUrl ? (
+          <ButtonLink href={formUrl} external emphasis>
+            Apply now <ArrowUpRight />
+            <span className="sr-only">(opens in a new tab)</span>
+          </ButtonLink>
+        ) : null}
+      </PageHeader>
 
+      {/* Who, what, expectations: three columns */}
       <Section bordered={false} id="apply">
-        <div className="grid gap-14 lg:grid-cols-12">
-          <div className="space-y-10 lg:col-span-5">
-            <List title="Who can join" items={joinCopy.whoCanJoin} />
-            <List title="What members gain" items={joinCopy.whatYouGain} />
-            <List title="What we expect" items={joinCopy.expectations} />
-          </div>
+        <div className="grid gap-14 md:grid-cols-3">
+          {[
+            { title: "Who can join", items: joinCopy.whoCanJoin },
+            { title: "What members gain", items: joinCopy.whatYouGain },
+            { title: "What we expect", items: joinCopy.expectations },
+          ].map((col, i) => (
+            <Reveal key={col.title} delay={i * 0.08}>
+              <h2 className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="tabular font-mono text-xs">{String(i + 1).padStart(2, "0")}</span>
+                {col.title}
+              </h2>
+              <Checklist className="mt-6" items={col.items} />
+            </Reveal>
+          ))}
+        </div>
+      </Section>
 
-          <div className="space-y-6 lg:col-span-7">
-            <div className="rounded-lg border border-border bg-surface p-6 sm:p-8">
-              <h2 className="text-xl font-semibold tracking-tight">How participation works</h2>
-              <ol className="mt-6 space-y-5">
-                {joinCopy.howItWorks.map((s, i) => (
-                  <li key={s.step} className="flex gap-4">
-                    <span className="text-sm text-brand-blue">{String(i + 1).padStart(2, "0")}</span>
-                    <div>
-                      <p className="text-sm font-medium">{s.step}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{s.detail}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
+      {/* Steps */}
+      <Section id="how-it-works">
+        <SectionHeading eyebrow="Process" title="How participation works" />
+        <NumberedList className="mt-16" ordered items={joinCopy.howItWorks.map((s) => ({ title: s.step, description: s.detail }))} />
+      </Section>
 
-            <div className="rounded-lg border border-border bg-surface p-6 sm:p-8">
-              <h2 className="text-xl font-semibold tracking-tight">Membership application</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                The application asks for: {joinCopy.applicationFields.join(", ")}. Applications are reviewed manually and are never approved automatically.
-              </p>
-              {formUrl ? (
-                <>
-                  <div className="mt-6">
-                    <ButtonLink href={formUrl} external emphasis>
-                      Apply now <ArrowUpRight />
-                      <span className="sr-only">(opens in a new tab)</span>
-                    </ButtonLink>
-                  </div>
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    The form is hosted by a third-party service, which receives what you submit. See our{" "}
-                    <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground">Privacy Policy</Link>.
-                  </p>
-                </>
-              ) : (
-                <div className="mt-6 rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-                  <p>The online application form is not open yet. In the meantime, say hello in any of our community channels below{email ? " or email us" : ""}.</p>
-                  {email ? (
-                    <a href={email.href} className="mt-3 inline-flex items-center gap-2 text-foreground underline underline-offset-4">
-                      <Mail aria-hidden="true" className="size-4" /> {email.href.replace("mailto:", "")}
-                    </a>
-                  ) : null}
+      {/* Application */}
+      <Section id="application">
+        <div className="grid gap-12 lg:grid-cols-12">
+          <SectionHeading className="lg:col-span-5" eyebrow="Application" title="Membership application" />
+          <Reveal className="lg:col-span-6 lg:col-start-7">
+            <p className="text-lg leading-snug text-muted-foreground sm:text-xl">
+              The application asks for: {joinCopy.applicationFields.join(", ")}. Applications are reviewed manually and are never approved automatically.
+            </p>
+            {formUrl ? (
+              <>
+                <div className="mt-8">
+                  <ButtonLink href={formUrl} external emphasis>
+                    Apply now <ArrowUpRight />
+                    <span className="sr-only">(opens in a new tab)</span>
+                  </ButtonLink>
                 </div>
-              )}
-            </div>
-          </div>
+                <p className="mt-5 text-sm text-muted-foreground">
+                  The form is hosted by a third-party service, which receives what you submit. See our{" "}
+                  <Link href="/privacy" className="text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground">Privacy Policy</Link>.
+                </p>
+              </>
+            ) : (
+              <div className="mt-8 rounded-2xl border border-dashed border-border p-6 text-base leading-snug text-muted-foreground">
+                <p>The online application form is not open yet. In the meantime, say hello in any of our community channels below{email ? " or email us" : ""}.</p>
+                {email ? (
+                  <a href={email.href} className="mt-4 inline-flex items-center gap-2 text-foreground underline underline-offset-4">
+                    <Mail aria-hidden="true" className="size-4" /> {email.href.replace("mailto:", "")}
+                  </a>
+                ) : null}
+              </div>
+            )}
+          </Reveal>
         </div>
       </Section>
 
       {invites.length > 0 ? (
-        <Section id="channels" className="bg-surface">
+        <Section id="channels">
           <SectionHeading eyebrow="Communication platforms" title="Where the community talks" description="You can join our channels at any time, whether or not your application has been reviewed." />
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <Stagger as="div" className="mt-16 grid gap-5 md:grid-cols-3">
             {invites.map((l) => (
-              <InviteCard key={l.id} link={l} />
+              <StaggerItem as="div" key={l.id}><InviteCard link={l} /></StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </Section>
       ) : null}
     </>

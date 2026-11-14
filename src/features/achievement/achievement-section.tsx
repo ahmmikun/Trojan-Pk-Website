@@ -3,7 +3,8 @@ import { ParallaxImage } from "@/components/motion/parallax-image";
 import { ButtonLink } from "@/components/common/button-link";
 import { Chip } from "@/components/common/chip";
 import { Section, SectionHeading } from "@/components/common/section";
-import { formatDate } from "@/lib/format";
+import { Reveal } from "@/components/common/reveal";
+import { Timeline } from "@/components/common/timeline";
 import type { Achievement } from "@/types/content";
 
 type Props = {
@@ -15,19 +16,19 @@ export function AchievementSection({ achievement }: Props) {
   const projectSlug = achievement.projectSlug;
   const eventSlug = achievement.eventSlug;
   return (
-    <Section id="achievement" className="bg-surface">
+    <Section id="achievement">
       <SectionHeading eyebrow="Featured achievement" title={achievement.title} description={achievement.description} />
 
-      <div className="mt-12 grid gap-6 lg:grid-cols-5">
-        <div className="relative overflow-hidden rounded-lg border border-border bg-background p-7 lg:col-span-3">
-          <div className="relative">
-            <Chip tone="accent" className="gap-1.5">
-              <Trophy aria-hidden="true" className="size-3" />
-              {achievement.badge}
-            </Chip>
-            <p className="mt-8 text-xs text-muted-foreground">Featured project</p>
-            <h3 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">{achievement.projectName}</h3>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">{achievement.projectSummary}</p>
+      <div className="mt-16 grid gap-12 lg:grid-cols-12">
+        <Reveal className="relative flex min-h-[28rem] flex-col overflow-hidden rounded-2xl bg-surface p-8 sm:p-12 lg:col-span-6">
+          <Chip tone="accent" className="gap-1.5 self-start">
+            <Trophy aria-hidden="true" className="size-3" />
+            {achievement.badge}
+          </Chip>
+          <div className="mt-auto pt-16">
+            <p className="text-sm text-muted-foreground">Featured project</p>
+            <h3 className="mt-3 text-6xl leading-[0.95] font-medium tracking-tighter sm:text-7xl">{achievement.projectName}</h3>
+            <p className="mt-5 max-w-md text-lg leading-snug text-muted-foreground">{achievement.projectSummary}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               {projectSlug ? (
                 <ButtonLink href={`/projects/${projectSlug}`} emphasis>
@@ -42,29 +43,17 @@ export function AchievementSection({ achievement }: Props) {
               ))}
             </div>
           </div>
-        </div>
+        </Reveal>
 
-        <ol className="rounded-lg border border-border bg-background p-7 lg:col-span-2" aria-label="Achievement timeline">
-          {achievement.timeline.map((step, i) => {
-            const date = formatDate(step.date);
-            return (
-              <li key={step.title} className="relative pb-8 pl-8 last:pb-0">
-                {i < achievement.timeline.length - 1 ? <span aria-hidden="true" className="absolute top-3 bottom-0 left-[5px] w-px bg-border" /> : null}
-                <span aria-hidden="true" className="absolute top-1.5 left-0 size-[11px] rounded-full border border-brand-blue bg-background" />
-                <p className="text-xs text-brand-blue">{step.label}</p>
-                <h4 className="mt-1 text-base font-medium">{step.title}</h4>
-                {date && step.date ? <time dateTime={step.date.toISOString().slice(0, 10)} className="mt-1 block text-sm text-muted-foreground">{date}</time> : null}
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.detail}</p>
-              </li>
-            );
-          })}
-        </ol>
+        <Reveal delay={0.1} className="lg:col-span-6">
+          <Timeline ariaLabel="Achievement timeline" items={achievement.timeline} />
+        </Reveal>
       </div>
 
       {achievement.images.length > 0 ? (
-        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {achievement.images.map((img) => (
-            <li key={img.src} className="relative aspect-[16/10] overflow-hidden rounded-lg border border-border">
+            <li key={img.src} className="relative aspect-[16/10] overflow-hidden rounded-2xl">
               <ParallaxImage src={img.src} alt={img.alt} sizes="(min-width: 1024px) 33vw, 100vw" />
             </li>
           ))}

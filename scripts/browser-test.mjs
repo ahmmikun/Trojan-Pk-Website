@@ -63,6 +63,15 @@ async function guard(name, fn) {
 const slug = (r) => (r === "/" ? "home" : r.slice(1).replace(/\//g, "_")).slice(0, 40);
 
 const browser = await chromium.launch({ executablePath, headless: true });
+// Every context skips the opening curtain (as on a repeat visit) unless it passes { intro: true }.
+{
+  const rawNewContext = browser.newContext.bind(browser);
+  browser.newContext = async ({ intro = false, ...options } = {}) => {
+    const context = await rawNewContext(options);
+    if (!intro) await context.addInitScript((key) => { try { sessionStorage.setItem(key, "1"); } catch {} }, "trojans-intro");
+    return context;
+  };
+}
 const axeSource = readFileSync(path.resolve("node_modules/axe-core/axe.min.js"), "utf8");
 
 try {
@@ -352,6 +361,25 @@ try {
       });
       check("parallax: image always covers its frame (no gaps)", covered);
     }
+    await context.close();
+  });
+  // 3j. opening curtain
+  await guard("3j. opening curtain", async () => {
+    const context = await browser.newContext({ intro: true, viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+    const curtain = page.locator("[data-intro]");
+    check("curtain: covers the page on the first visit", await curtain.isVisible());
+    const heroBefore = await page.evaluate(() => getComputedStyle(document.querySelector("h1 [data-fm]")).transform);
+    await page.waitForTimeout(1200);
+    const heroDuring = await page.evaluate(() => getComputedStyle(document.querySelector("h1 [data-fm]")).transform);
+    check("curtain: hero animation waits while the curtain is down", heroBefore === heroDuring, `${heroBefore} -> ${heroDuring}`);
+    await curtain.waitFor({ state: "detached", timeout: 6000 });
+    await page.waitForTimeout(1500);
+    const op = await page.evaluate(() => getComputedStyle(document.querySelector("h1 [data-fm]")).transform);
+    check("curtain: removed after lifting, and the hero has played", op === "none" || /matrix\(1, 0, 0, 1, 0, 0\)/.test(op), op);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    check("curtain: not shown again in the same session", !(await page.locator("[data-intro]").isVisible().catch(() => false)));
     await context.close();
   });
 } finally {

@@ -8,37 +8,38 @@ import { PROJECT_CATEGORIES, type Project } from "@/types/content";
 
 const categoryName = (slug: Project["categorySlug"]) => PROJECT_CATEGORIES.find((c) => c.slug === slug)?.name ?? "Other";
 
+/** Editorial project tile: cover on top, text below, the whole tile is the link. */
 export function ProjectCard({ project, className }: { project: Project; className?: string }) {
   const category = categoryName(project.categorySlug);
   return (
-    <article
-      className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-500 ease-[var(--ease-premium)] hover:-translate-y-1 hover:border-foreground/25 hover:bg-surface-2",
-        className,
-      )}
-    >
-      <Cover src={project.coverImage} title={project.title} label={category} className="border-b border-border" />
-      <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center gap-2">
-          <Chip>{category}</Chip>
-          {project.badge ? <Chip tone="accent">{project.badge}</Chip> : null}
-        </div>
-        <h3 className="mt-4 text-lg font-medium tracking-tight">
-          <Link href={`/projects/${project.slug}`} className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:outline-ring">
-            {project.title}
-            <ArrowUpRight aria-hidden="true" className="ml-1 inline size-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+    <article className={cn("group relative flex h-full flex-col", className)}>
+      <Cover src={project.coverImage} title={project.title} label={category} className="rounded-2xl" />
+      <div className="flex flex-1 flex-col pt-5">
+        <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+          <span>{category}</span>
+          {project.badge ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="text-foreground">{project.badge}</span>
+            </>
+          ) : null}
+        </p>
+        <h3 className="mt-2 text-2xl font-medium tracking-tight">
+          <Link href={`/projects/${project.slug}`} className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-ring">
+            <span className="link-underline">{project.title}</span>
+            <ArrowUpRight aria-hidden="true" className="ml-1 inline size-5 text-muted-foreground transition-transform duration-500 ease-[var(--ease-premium)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
           </Link>
         </h3>
-        <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{project.summary}</p>
+        <p className="mt-2 flex-1 text-base leading-snug text-muted-foreground">{project.summary}</p>
         {project.technologies.length > 0 ? (
-          <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Technologies">
+          <ul className="mt-5 flex flex-wrap gap-1.5" aria-label="Technologies">
             {project.technologies.slice(0, 5).map((t) => (
               <li key={t}><Chip>{t}</Chip></li>
             ))}
           </ul>
         ) : null}
         {project.githubUrl || project.liveUrl ? (
-          <div className="relative z-10 mt-5 flex gap-4 border-t border-border pt-4 text-sm">
+          <div className="relative z-10 mt-5 flex gap-5 border-t border-border pt-4 text-sm">
             {project.githubUrl ? (
               <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
                 <BrandIcon icon="github" className="size-4" /> GitHub

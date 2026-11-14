@@ -2,9 +2,10 @@ import { cn } from "@/lib/utils";
 
 type Props = React.ComponentProps<"div"> & { size?: "default" | "narrow" | "wide" };
 
+/* default and wide share the navbar's width so every left edge lines up. */
 const sizes = {
   narrow: "max-w-3xl",
-  default: "max-w-6xl",
+  default: "max-w-7xl",
   wide: "max-w-7xl",
 } as const;
 

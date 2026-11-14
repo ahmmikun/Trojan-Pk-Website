@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Chip } from "@/components/common/chip";
 import { Container } from "@/components/common/container";
-import { Cover } from "@/components/common/cover";
+import { DetailHeader } from "@/components/common/detail-header";
 import { JsonLd } from "@/components/common/json-ld";
 import { Markdown } from "@/components/common/markdown";
 import { Section, SectionHeading } from "@/components/common/section";
+import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { siteConfig } from "@/config/site";
 import { getPostBySlug, getPosts, getRelatedPosts } from "@/content/blog";
 import { getTeamMemberBySlug } from "@/content/team";
@@ -76,63 +76,61 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
           ...(post.coverImage ? { image: `${siteConfig.url}${post.coverImage}` } : {}),
         }}
       />
-      <Container size="narrow" className="pt-10">
-        <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft aria-hidden="true" className="size-4" /> All articles
-        </Link>
-      </Container>
-
-      <Container size="narrow" className="py-10">
-        <Chip tone="accent">{category}</Chip>
-        <h1 className="mt-5 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">{post.title}</h1>
-        <p className="mt-5 text-lg leading-relaxed text-muted-foreground">{post.excerpt}</p>
-        <p className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">
-            {author ? <Link href={`/team#${author.slug}`} className="hover:underline">{post.authorName}</Link> : post.authorName}
+      <DetailHeader
+        narrow
+        back={{ href: "/blog", label: "All articles" }}
+        meta={
+          <>
+            <span>{category}</span>
+            <span aria-hidden="true">·</span>
+            <time dateTime={post.publishedAt.toISOString()}>{formatDate(post.publishedAt)}</time>
+            <span aria-hidden="true">·</span>
+            <span>{readingTime(post.content)} min read</span>
+          </>
+        }
+        title={post.title}
+        summary={post.excerpt}
+        cover={post.coverImage ? { src: post.coverImage, title: post.title } : undefined}
+      >
+        <p className="mt-6 text-sm text-muted-foreground">
+          By{" "}
+          <span className="text-foreground">
+            {author ? <Link href={`/team#${author.slug}`} className="link-underline">{post.authorName}</Link> : post.authorName}
           </span>
-          <span aria-hidden="true">·</span>
-          <time dateTime={post.publishedAt.toISOString()}>{formatDate(post.publishedAt)}</time>
-          <span aria-hidden="true">·</span>
-          <span>{readingTime(post.content)} min read</span>
         </p>
-      </Container>
+      </DetailHeader>
 
-      {post.coverImage ? (
-        <Container>
-          <Cover src={post.coverImage} title={post.title} priority sizes="(min-width: 1152px) 1100px, 100vw" className="rounded-lg border border-border sm:aspect-[21/9]" />
-        </Container>
-      ) : null}
-
-      <Container size="narrow" className="py-12">
-        <Markdown>{post.content}</Markdown>
+      <Container size="narrow" className="py-20 sm:py-24">
+        <Markdown className="text-lg leading-[1.65]">{post.content}</Markdown>
         {post.tags.length > 0 ? (
-          <ul className="mt-10 flex flex-wrap gap-2" aria-label="Tags">
+          <ul className="mt-12 flex flex-wrap gap-2" aria-label="Tags">
             {post.tags.map((t) => (
               <li key={t}><Chip>{t}</Chip></li>
             ))}
           </ul>
         ) : null}
-        <div className="mt-10 border-t border-border pt-8"><ShareLinks url={url} title={post.title} /></div>
+        <div className="mt-12 border-t border-border pt-8"><ShareLinks url={url} title={post.title} /></div>
 
-        <aside aria-label="About the author" className="mt-10 flex gap-4 rounded-lg border border-border bg-surface p-5">
-          <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-md border border-border bg-background text-sm text-muted-foreground">
+        <aside aria-label="About the author" className="mt-12 flex gap-5 border-t border-border pt-8">
+          <span aria-hidden="true" className="flex size-14 shrink-0 items-center justify-center rounded-full bg-surface-2 text-base font-medium tracking-tight text-muted-foreground">
             {initials(post.authorName)}
           </span>
           <div>
-            <p className="font-medium">{post.authorName}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{author ? `${author.role}. ${author.bio}` : "Trojans PK community member."}</p>
+            <p className="text-sm text-muted-foreground">Written by</p>
+            <p className="mt-1 text-xl font-medium tracking-tight">{post.authorName}</p>
+            <p className="mt-2 text-base leading-snug text-muted-foreground">{author ? `${author.role}. ${author.bio}` : "Trojans PK community member."}</p>
           </div>
         </aside>
       </Container>
 
       {related.length > 0 ? (
-        <Section className="bg-surface">
+        <Section>
           <SectionHeading eyebrow="Keep reading" title="Related articles" />
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <Stagger className="mt-16 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((p) => (
-              <li key={p.slug}><PostCard post={p} /></li>
+              <StaggerItem key={p.slug}><PostCard post={p} /></StaggerItem>
             ))}
-          </ul>
+          </Stagger>
         </Section>
       ) : null}
     </>

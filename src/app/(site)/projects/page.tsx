@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/common/page-header";
 import { Section, SectionHeading } from "@/components/common/section";
+import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { ProjectCard } from "@/features/projects/project-card";
 import { ProjectExplorer } from "@/features/projects/project-explorer";
 import { getProjects } from "@/content/projects";
@@ -26,17 +27,19 @@ export default async function ProjectsPage() {
       {featured.length > 0 ? (
         <Section bordered={false} id="featured">
           <SectionHeading eyebrow="Featured" title="Highlighted projects" />
-          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <Stagger className={featured.length === 1 ? "mt-16 grid" : "mt-16 grid gap-x-6 gap-y-14 sm:grid-cols-2"}>
             {featured.map((p) => (
-              <li key={p.slug}><ProjectCard project={p} /></li>
+              <StaggerItem key={p.slug}>
+                <ProjectCard project={p} className={featured.length === 1 ? "[&>div:first-child]:sm:aspect-[21/9]" : undefined} />
+              </StaggerItem>
             ))}
-          </ul>
+          </Stagger>
         </Section>
       ) : null}
 
-      <Section id="all" className="bg-surface">
+      <Section id="all">
         <SectionHeading eyebrow="Browse" title="All projects" />
-        <div className="mt-10">
+        <div className="mt-16">
           <ProjectExplorer projects={projects} />
         </div>
       </Section>

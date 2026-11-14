@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { ArrowLeft, ArrowUpRight, CalendarDays, MapPin, UserRound } from "lucide-react";
-import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/common/button-link";
 import { Container } from "@/components/common/container";
-import { Cover } from "@/components/common/cover";
+import { DetailAside, DetailHeader } from "@/components/common/detail-header";
 import { JsonLd } from "@/components/common/json-ld";
+import { MediaGrid } from "@/components/common/media-grid";
 import { Markdown } from "@/components/common/markdown";
+import { Section, SectionHeading } from "@/components/common/section";
 import { siteConfig } from "@/config/site";
-import { EventStatusChip, eventTypeLabel } from "@/features/events/event-card";
+import { EventStatusChip, eventToMedia, eventTypeLabel } from "@/features/events/event-card";
 import { eventDateLabel } from "@/lib/format";
 import { getEventBySlug, getEvents } from "@/content/events";
 
@@ -36,13 +37,17 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
   const event = await getEventBySlug(slug);
   if (!event) notFound();
 
+  const { upcoming, past } = await getEvents();
+  const more = [...upcoming, ...past].filter((e) => e.slug !== event.slug).slice(0, 2);
+
   const date = eventDateLabel(event);
   const open = event.status === "UPCOMING" || event.status === "ONGOING";
   const facts = [
-    date && { icon: CalendarDays, label: "Date and time", value: date },
-    event.location && { icon: MapPin, label: "Location", value: event.location },
-    event.organizer && { icon: UserRound, label: "Organizer", value: event.organizer },
-  ].filter(Boolean) as { icon: typeof CalendarDays; label: string; value: string }[];
+    { label: "Type", value: eventTypeLabel(event.type) },
+    date && { label: "Date and time", value: date },
+    event.location && { label: "Location", value: event.location },
+    event.organizer && { label: "Organizer", value: event.organizer },
+  ].filter(Boolean) as { label: string; value: string }[];
 
   return (
     <>
@@ -60,45 +65,36 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
           ...(event.organizer ? { organizer: { "@type": "Organization", name: event.organizer } } : {}),
         }}
       />
-      <Container className="pt-10">
-        <Link href="/events" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft aria-hidden="true" className="size-4" /> All events
-        </Link>
-      </Container>
+      <DetailHeader
+        back={{ href: "/events", label: "All events" }}
+        meta={
+          <>
+            <span>{eventTypeLabel(event.type)}</span>
+            <EventStatusChip status={event.status} />
+            {date ? <span className="tabular">· {date}</span> : null}
+          </>
+        }
+        title={event.title}
+        summary={event.summary}
+        actions={open && event.registrationUrl ? <ButtonLink href={event.registrationUrl} external emphasis>Register <ArrowUpRight /></ButtonLink> : undefined}
+        cover={{ src: event.image, title: event.title, label: eventTypeLabel(event.type) }}
+      />
 
-      <Container className="py-10">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-brand-blue">{eventTypeLabel(event.type)}</span>
-          <EventStatusChip status={event.status} />
+      <Container className="grid gap-16 py-20 sm:py-28 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <Markdown className="text-lg leading-[1.6]">{event.content}</Markdown>
         </div>
-        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">{event.title}</h1>
-        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">{event.summary}</p>
-        {open && event.registrationUrl ? (
-          <div className="mt-8">
-            <ButtonLink href={event.registrationUrl} external emphasis>Register <ArrowUpRight /></ButtonLink>
-          </div>
-        ) : null}
-        <Cover src={event.image} title={event.title} label={eventTypeLabel(event.type)} priority sizes="(min-width: 1152px) 1100px, 100vw" className="mt-12 rounded-lg border border-border sm:aspect-[21/9]" />
+        <div className="lg:col-span-4 lg:col-start-9">
+          <DetailAside label="Event details" items={facts} />
+        </div>
       </Container>
 
-      <Container className="grid gap-12 pb-20 lg:grid-cols-12">
-        <div className="lg:col-span-8"><Markdown>{event.content}</Markdown></div>
-        {facts.length > 0 ? (
-          <aside className="lg:col-span-4" aria-label="Event details">
-            <dl className="divide-y divide-border rounded-lg border border-border bg-surface">
-              {facts.map((f) => (
-                <div key={f.label} className="grid grid-cols-[1rem_1fr] gap-x-3 px-5 py-4 text-sm">
-                  <dt className="contents">
-                    <f.icon aria-hidden="true" className="mt-0.5 size-4 text-brand-blue" />
-                    <span className="text-muted-foreground">{f.label}</span>
-                  </dt>
-                  <dd className="col-start-2 mt-0.5">{f.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </aside>
-        ) : null}
-      </Container>
+      {more.length > 0 ? (
+        <Section>
+          <SectionHeading eyebrow="Events" title="More from the community" />
+          <MediaGrid className="mt-16" items={more.map(eventToMedia)} />
+        </Section>
+      ) : null}
     </>
   );
 }

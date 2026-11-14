@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/common/empty-state";
-import { FilterGroup, SearchField } from "@/components/common/filter-bar";
+import { FilterGroup, ResultCount, SearchField } from "@/components/common/filter-bar";
 import { Button } from "@/components/ui/button";
 import { BLOG_CATEGORIES, type BlogPost } from "@/types/content";
 import { PostCard } from "./post-card";
@@ -30,8 +30,11 @@ export function BlogExplorer({ posts }: { posts: BlogPost[] }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-5">
-        <SearchField value={query} onChange={update(setQuery)} label="Search articles" placeholder="Search articles, authors or tags" />
+      <div className="flex flex-col gap-6 border-b border-border pb-8">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <SearchField value={query} onChange={update(setQuery)} label="Search articles" placeholder="Search articles, authors or tags" />
+          <ResultCount count={filtered.length} noun="article" />
+        </div>
         <FilterGroup
           label="Filter by category"
           value={category}
@@ -41,27 +44,23 @@ export function BlogExplorer({ posts }: { posts: BlogPost[] }) {
         />
       </div>
 
-      <p className="mt-8 text-sm text-muted-foreground" role="status" aria-live="polite">
-        {filtered.length} {filtered.length === 1 ? "article" : "articles"}
-      </p>
-
       {filtered.length > 0 ? (
-        <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-12 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.slice(0, visible).map((p) => (
             <li key={p.slug}><PostCard post={p} /></li>
           ))}
         </ul>
       ) : (
         <EmptyState
-          className="mt-4"
+          className="mt-12"
           title={posts.length === 0 ? "No articles published yet" : "No articles match your filters"}
           description={posts.length === 0 ? "Tutorials, hackathon stories and community announcements will be published here." : "Try a different search term or topic."}
         />
       )}
 
       {filtered.length > visible ? (
-        <div className="mt-10 flex justify-center">
-          <Button variant="outline" size="lg" onClick={() => setVisible((v) => v + PAGE_SIZE)}>Show more</Button>
+        <div className="mt-14 flex justify-center">
+          <Button variant="outline" size="lg" className="h-11 rounded-full px-6" onClick={() => setVisible((v) => v + PAGE_SIZE)}>Show more</Button>
         </div>
       ) : null}
     </div>

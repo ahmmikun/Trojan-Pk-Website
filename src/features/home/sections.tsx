@@ -89,8 +89,10 @@ export async function CommunityImpact() {
   );
 }
 
-export async function FeaturedProjects() {
-  const projects = await getFeaturedProjects(3);
+/** Projects not already shown by the achievement section. Omitted when that leaves nothing new to show. */
+export async function FeaturedProjects({ excludeSlug = null }: { excludeSlug?: string | null }) {
+  const projects = (await getFeaturedProjects(4)).filter((p) => p.slug !== excludeSlug).slice(0, 3);
+  if (projects.length === 0 && excludeSlug) return null;
   return (
     <Section id="featured-projects">
       <div className="flex flex-wrap items-end justify-between gap-6">

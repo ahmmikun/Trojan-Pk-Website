@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { EASE } from "@/components/motion/motion";
+import { useIntroDone } from "@/components/motion/intro-store";
 
 /**
  * Cycles through phrases in place. The box animates to each phrase's width,
@@ -11,10 +12,12 @@ import { EASE } from "@/components/motion/motion";
  */
 export function RotatingWords({ words, startDelay = 1.4, interval = 2.6 }: { words: string[]; startDelay?: number; interval?: number }) {
   const reduce = useReducedMotion();
+  const ready = useIntroDone();
   const [index, setIndex] = useState(0);
 
+  // The cycle starts only once the opening curtain has lifted.
   useEffect(() => {
-    if (reduce) return;
+    if (reduce || !ready) return;
     let timer: ReturnType<typeof setInterval>;
     const start = setTimeout(() => {
       setIndex((i) => (i + 1) % words.length);
@@ -24,17 +27,17 @@ export function RotatingWords({ words, startDelay = 1.4, interval = 2.6 }: { wor
       clearTimeout(start);
       clearInterval(timer);
     };
-  }, [reduce, words.length, startDelay, interval]);
+  }, [reduce, ready, words.length, startDelay, interval]);
 
   return (
-    <motion.span layout aria-hidden="true" transition={{ layout: { duration: 0.6, ease: EASE } }} className="relative inline-block overflow-hidden pb-[0.12em] align-bottom">
+    <motion.span layout aria-hidden="true" transition={{ layout: { duration: 0.6, ease: EASE } }} className="relative -mx-[0.06em] inline-block overflow-hidden px-[0.06em] pb-[0.12em] align-bottom">
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span
           key={words[index]}
           data-fm=""
           className="relative block whitespace-nowrap"
           initial={{ y: "100%", opacity: 0 }}
-          animate={{ y: 0, opacity: 1, transition: { duration: 0.7, ease: EASE } }}
+          animate={ready ? { y: 0, opacity: 1, transition: { duration: 0.8, delay: index === 0 ? 0.45 : 0, ease: EASE } } : { y: "100%", opacity: 0 }}
           exit={{ y: "-100%", opacity: 0, transition: { duration: 0.5, ease: EASE } }}
         >
           {words[index]}
@@ -42,7 +45,7 @@ export function RotatingWords({ words, startDelay = 1.4, interval = 2.6 }: { wor
             data-fm=""
             className="absolute inset-x-0 -bottom-[0.06em] h-[0.06em] origin-left rounded-full bg-success"
             initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1, transition: { duration: 0.9, delay: index === 0 ? startDelay * 0.6 : 0.3, ease: EASE } }}
+            animate={ready ? { scaleX: 1, transition: { duration: 0.9, delay: index === 0 ? startDelay * 0.6 : 0.3, ease: EASE } } : { scaleX: 0 }}
           />
         </motion.span>
       </AnimatePresence>

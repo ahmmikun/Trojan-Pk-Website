@@ -16,7 +16,7 @@ type Props = Omit<React.ComponentProps<typeof Link>, "href"> &
 export function ButtonLink({ href, external, emphasis, variant, size = "lg", className, children, ...props }: Props) {
   const classes = cn(
     buttonVariants({ variant: emphasis ? "default" : variant, size }),
-    "h-10 px-4 text-sm",
+    "h-11 rounded-full px-5 text-sm",
     emphasis && "bg-foreground text-background hover:bg-foreground/90",
     className,
   );

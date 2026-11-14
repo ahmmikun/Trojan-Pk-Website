@@ -2,6 +2,7 @@
 
 import { MotionConfig, motion, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useIntroDone } from "./intro-store";
 
 export const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -24,8 +25,12 @@ type RevealProps = {
   y?: number;
 };
 
-/** Fade and rise. Content is in the server HTML; `data-fm` lets <noscript> CSS show it without JS. */
+/**
+ * Fade and rise. Content is in the server HTML; `data-fm` lets <noscript> CSS show it without JS.
+ * Immediate (above-the-fold) reveals wait for the opening curtain to lift.
+ */
 export function Reveal({ children, className, delay = 0, immediate = false, y = 18 }: RevealProps) {
+  const ready = useIntroDone();
   const initial = { opacity: 0, y };
   const shown = { opacity: 1, y: 0, transition: { delay } };
   return (
@@ -34,7 +39,7 @@ export function Reveal({ children, className, delay = 0, immediate = false, y = 
       className={className}
       initial={initial}
       {...(immediate
-        ? { animate: shown }
+        ? { animate: ready ? shown : initial }
         : { whileInView: shown, viewport: { once: true, margin: "0px 0px -12% 0px" } })}
     >
       {children}
@@ -75,16 +80,17 @@ export function StaggerItem({ children, className, as = "li" }: { children: Reac
  * search engines and screen readers.
  */
 export function WordReveal({ text, className, delay = 0, decorative = false }: { text: string; className?: string; delay?: number; decorative?: boolean }) {
+  const ready = useIntroDone();
   const words = text.split(" ");
   return (
     <span aria-hidden={decorative || undefined} className={cn("inline", className)}>
       {words.map((w, i) => (
-        <span key={`${w}-${i}`} className="inline-block overflow-hidden pb-[0.08em] align-bottom">
+        <span key={`${w}-${i}`} className="-mx-[0.06em] inline-block overflow-hidden px-[0.06em] pb-[0.08em] align-bottom">
           <motion.span
             data-fm=""
             className="inline-block"
             initial={{ y: "105%" }}
-            animate={{ y: 0, transition: { delay: delay + i * 0.045, duration: 0.85, ease: EASE } }}
+            animate={ready ? { y: 0, transition: { delay: delay + i * 0.045, duration: 0.85, ease: EASE } } : { y: "105%" }}
           >
             {w}
             {i < words.length - 1 ? "\u00a0" : ""}

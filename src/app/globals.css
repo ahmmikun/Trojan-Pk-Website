@@ -154,9 +154,14 @@
 }
 
 @layer base {
+  /* Opening curtain already played this session, or motion is reduced (set before paint in layout.tsx). */
+  .intro-skip [data-intro] {
+    display: none;
+  }
   :root {
     /* Height of the fixed header. <main> is padded by it; full-bleed headers pull up under it. */
     --nav-h: 4.25rem;
+    --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
   }
   * {
     @apply border-border outline-ring/50;
@@ -241,5 +246,18 @@
   }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+  /* Underline that draws in from the left on hover of the element or its .group parent. */
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.5s var(--ease-premium);
+  }
+  .link-underline:hover,
+  .group:hover .link-underline,
+  .group:focus-visible .link-underline {
+    background-size: 100% 1px;
   }
 }
