@@ -1,6 +1,6 @@
 /**
  * Public base URL used for canonical links, the sitemap, robots.txt, Open Graph
- * and structured data. Resolved once at build time (the site is static).
+ * and structured data. Resolved once at build time.
  *
  * Order: NEXT_PUBLIC_SITE_URL (set this for your real domain), then the URL
  * the hosting platform provides automatically, then localhost for local work.

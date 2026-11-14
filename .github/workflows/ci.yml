@@ -1,8 +1,8 @@
 name: CI
 
-# Lint, type-check, build the static site and run the site audit + browser
-# tests on every push and pull request. Deployment is handled by the host
-# (Vercel / Netlify / Cloudflare Pages) from the same repository.
+# Lint, type-check, build and run the site audit + browser tests (both start
+# `next start`) on every push and pull request. Deployment is handled by
+# Vercel from the same repository.
 
 on:
   push:

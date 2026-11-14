@@ -7,8 +7,6 @@ import { Container } from "@/components/common/container";
 import { Cover } from "@/components/common/cover";
 import { JsonLd } from "@/components/common/json-ld";
 import { Markdown } from "@/components/common/markdown";
-import { PageHeader } from "@/components/common/page-header";
-import { ButtonLink } from "@/components/common/button-link";
 import { Section, SectionHeading } from "@/components/common/section";
 import { siteConfig } from "@/config/site";
 import { getPostBySlug, getPosts, getRelatedPosts } from "@/content/blog";
@@ -17,21 +15,18 @@ import { PostCard, blogCategoryName } from "@/features/blog/post-card";
 import { ShareLinks } from "@/features/blog/share-links";
 import { formatDate, initials, readingTime } from "@/lib/format";
 
-// Static export: one page per Markdown file in content/blog/.
-export const dynamicParams = false;
-
-/** Static export requires at least one param. While the blog is empty we emit a placeholder that renders the 404 page. */
-const EMPTY_BLOG_PLACEHOLDER = "no-posts-yet";
+// Known slugs are prerendered at build time. Others render on demand; notFound() handles unknown ones.
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   const posts = await getPosts();
-  return posts.length > 0 ? posts.map((p) => ({ slug: p.slug })) : [{ slug: EMPTY_BLOG_PLACEHOLDER }];
+  return posts.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): Promise<Metadata> {
   const post = await getPostBySlug((await params).slug);
   if (!post) {
-    return { title: "No articles yet", alternates: { canonical: "/blog" }, robots: { index: false, follow: true } };
+    return {};
   }
   return {
     title: post.title,
@@ -55,14 +50,6 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) {
-    // Placeholder URL emitted only while the blog is empty: render a real (noindex) page, not the error shell.
-    if (slug === EMPTY_BLOG_PLACEHOLDER) {
-      return (
-        <PageHeader eyebrow="Blog" title="No articles yet." description="Articles will be published here soon.">
-          <ButtonLink href="/blog" variant="outline">Back to the blog</ButtonLink>
-        </PageHeader>
-      );
-    }
     notFound();
   }
 

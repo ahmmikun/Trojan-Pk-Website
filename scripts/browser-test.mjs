@@ -1,26 +1,19 @@
 #!/usr/bin/env node
 /* global axe */ // injected into the page by addScriptTag
 /**
- * Real-browser tests against the static export in ./out.
- *
- *   npm run build && npm run test:browser
+ * Real-browser tests against the production server (`next start`).`r`n *`r`n *   npm run build && npm run test:browser`r`n *   SITE_BASE_URL=https://preview.example.com npm run test:browser   test a deployment
  *   npm run test:browser -- --shots      also save full-page screenshots to .test-output/
  *
  * Needs Chrome, Edge or Chromium installed (set CHROME_PATH to override).
  * Covers: console errors, failed requests, horizontal overflow at three widths,
  * an axe-core accessibility audit, and key interactions.
  */
-import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
-import { createServer } from "node:http";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright-core";
+import { startServer } from "./lib/server.mjs";
 
-const OUT = path.resolve("out");
 const SHOTS = process.argv.includes("--shots") ? path.resolve(".test-output") : null;
-if (!existsSync(OUT)) {
-  console.error('No ./out folder. Run "npm run build" first.');
-  process.exit(1);
-}
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 
 const CHROME_CANDIDATES = [
@@ -39,24 +32,9 @@ if (!executablePath) {
   process.exit(1);
 }
 
-// ---- minimal static server (clean URLs, 404.html) -------------------------
-const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".txt": "text/plain", ".xml": "application/xml", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff" };
-function fileFor(urlPath) {
-  const clean = decodeURIComponent(urlPath.split("?")[0].split("#")[0]);
-  for (const c of [clean, `${clean}.html`, path.posix.join(clean, "index.html")]) {
-    const f = path.join(OUT, c);
-    if (f.startsWith(OUT) && existsSync(f) && statSync(f).isFile()) return f;
-  }
-  return null;
-}
-const server = createServer((req, res) => {
-  const f = fileFor(req.url ?? "/");
-  const file = f ?? path.join(OUT, "404.html");
-  res.writeHead(f ? 200 : 404, { "content-type": MIME[path.extname(file)] ?? "application/octet-stream" });
-  res.end(readFileSync(file));
-});
-await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const BASE = `http://127.0.0.1:${server.address().port}`;
+// ---- production server (next start, or SITE_BASE_URL) --------------------
+const server = await startServer();
+const BASE = server.base;
 
 // ---- test bookkeeping -----------------------------------------------------
 const failures = [];
@@ -68,7 +46,7 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${!ok && detail ? `  (${detail})` : ""}`);
 }
 
-const routes = ["/", "/about", "/community", "/projects", "/projects/bolkhata", "/events", "/events/alibaba-cloud-ai-hackathon-pakistan-2026-national-finals", "/team", "/blog", "/join", "/privacy", "/terms", "/blog/no-posts-yet"];
+const routes = ["/", "/about", "/community", "/projects", "/projects/bolkhata", "/events", "/events/alibaba-cloud-ai-hackathon-pakistan-2026-national-finals", "/team", "/blog", "/join", "/privacy", "/terms"];
 const viewports = [
   { name: "mobile", width: 375, height: 812 },
   { name: "tablet", width: 768, height: 1024 },
@@ -291,9 +269,25 @@ try {
     check("404 page renders custom page with link home", (await page.getByRole("heading", { name: "Page not found" }).count()) === 1 && (await page.getByRole("link", { name: "Back to home" }).count()) === 1);
     await context.close();
   });
+  // 3g. image optimization
+  await guard("3g. image optimization", async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    const res = await page.request.get(`${BASE}/_next/image?url=%2Fbrand%2Fmark.png&w=48&q=75`, { headers: { accept: "image/avif,image/webp,*/*" } });
+    const type = res.headers()["content-type"] ?? "";
+    const size = (await res.body()).length;
+    check("images: optimizer serves AVIF/WebP", res.ok() && /image\/(avif|webp)/.test(type), `${res.status()} ${type}`);
+    check("images: optimized logo is far smaller than the 155 KB original", size < 10_000, `${size} bytes`);
+    const unlisted = await page.request.get(`${BASE}/_next/image?url=%2Fbrand%2Fmark.png&w=48&q=50`);
+    check("images: qualities outside the allowlist are rejected", unlisted.status() === 400, String(unlisted.status()));
+    await page.goto(BASE + "/", { waitUntil: "networkidle" });
+    const raw = await page.evaluate(() => [...document.images].filter((i) => /^\/brand\//.test(new URL(i.currentSrc || i.src).pathname)).length);
+    check("images: no raw /public image is requested directly", raw === 0, String(raw));
+    await context.close();
+  });
 } finally {
   await browser.close();
-  server.close();
+  await server.stop();
 }
 
 console.log(`\n${passed} passed, ${failures.length} failed.`);

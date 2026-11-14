@@ -16,8 +16,8 @@ import { formatDate } from "@/lib/format";
 import { getCategoryName, getProjectBySlug, getProjects, getRelatedProjects } from "@/content/projects";
 import { PROJECT_STATUS_LABEL } from "@/types/content";
 
-// Static export: only the slugs returned below exist.
-export const dynamicParams = false;
+// Known slugs are prerendered at build time. Others render on demand; notFound() handles unknown ones.
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return (await getProjects()).map((p) => ({ slug: p.slug }));

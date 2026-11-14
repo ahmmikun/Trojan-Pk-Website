@@ -1,76 +1,100 @@
 #!/usr/bin/env node
 /**
- * Audits the static export in ./out. Run after `npm run build`:
+ * Audits the running production site (`next start`, or any deployment via
+ * SITE_BASE_URL). Run after `npm run build`:
  *
  *   npm run check:site              internal checks (fast, offline)
  *   npm run check:site -- --external   also request every external link
+ *   SITE_BASE_URL=https://preview.example.com npm run check:site
  *
+ * Pages are discovered from /sitemap.xml and by following internal links.
  * Internal checks (failures exit with code 1):
- *   - every internal link, image and script resolves to a file in ./out
+ *   - every internal link, image and script resolves (HTTP < 400)
  *   - every #fragment points at an existing id on the target page
  *   - each page has one <h1>, a <title>, a meta description and a canonical URL
  *   - every <img> has an alt attribute
  *   - external links open safely (rel="noopener noreferrer" with target="_blank")
  *   - JSON-LD blocks are valid JSON
  *   - sitemap URLs exist and robots.txt references the sitemap
+ *   - security headers (including a CSP) are sent, unknown URLs return 404
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import path from "node:path";
+import { startServer } from "./lib/server.mjs";
 
-const OUT = path.resolve("out");
 const checkExternal = process.argv.includes("--external");
-
-if (!existsSync(OUT)) {
-  console.error('No ./out folder. Run "npm run build" first.');
-  process.exit(1);
-}
 
 const errors = [];
 const warnings = [];
 const fail = (page, msg) => errors.push(`${page}: ${msg}`);
 const warn = (page, msg) => warnings.push(`${page}: ${msg}`);
 
-function walk(dir) {
-  return readdirSync(dir).flatMap((name) => {
-    const p = path.join(dir, name);
-    return statSync(p).isDirectory() ? walk(p) : [p];
-  });
-}
+const server = await startServer();
+const BASE = server.base;
 
-const files = walk(OUT);
-const htmlFiles = files.filter((f) => f.endsWith(".html") && !f.includes(`${path.sep}_next${path.sep}`) && !f.includes("__next"));
-const rel = (f) => "/" + path.relative(OUT, f).split(path.sep).join("/");
-
-/** Map a URL path to a file in ./out, mirroring how static hosts resolve clean URLs. */
-function resolveFile(urlPath) {
-  const clean = decodeURIComponent(urlPath.split("#")[0].split("?")[0]);
-  const candidates = [clean, `${clean}.html`, path.posix.join(clean, "index.html")];
-  for (const c of candidates) {
-    const f = path.join(OUT, c);
-    if (existsSync(f) && statSync(f).isFile()) return f;
+const htmlCache = new Map(); // path -> { status, html, headers }
+async function load(urlPath) {
+  const key = urlPath.split("#")[0];
+  if (!htmlCache.has(key)) {
+    const res = await fetch(BASE + key, { redirect: "manual" });
+    const type = res.headers.get("content-type") ?? "";
+    htmlCache.set(key, { status: res.status, headers: res.headers, html: type.includes("text/html") ? await res.text() : "" });
   }
-  return null;
+  return htmlCache.get(key);
 }
-
+const existsCache = new Map();
+/** True when the URL answers with a non-error status. */
+async function exists(urlPath) {
+  const key = urlPath.split("#")[0];
+  if (!existsCache.has(key)) {
+    const res = await fetch(BASE + key, { redirect: "follow" });
+    await res.body?.cancel();
+    existsCache.set(key, res.status < 400);
+  }
+  return existsCache.get(key);
+}
 const attr = (tag, name) => tag.match(new RegExp(`\\s${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, "i"))?.[2] ?? tag.match(new RegExp(`\\s${name}\\s*=\\s*'([^']*)'`, "i"))?.[1];
 const decode = (s) => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
 const idCache = new Map();
-function idsOf(file) {
-  if (!idCache.has(file)) {
-    const html = readFileSync(file, "utf8");
-    idCache.set(file, new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1])));
+async function idsOf(urlPath) {
+  const key = urlPath.split("#")[0];
+  if (!idCache.has(key)) {
+    const { html } = await load(key);
+    idCache.set(key, new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1])));
   }
-  return idCache.get(file);
+  return idCache.get(key);
 }
-
 const externalLinks = new Map(); // url -> pages
 let internalChecked = 0;
 
-for (const file of htmlFiles) {
-  const page = rel(file);
-  const html = readFileSync(file, "utf8");
-  const isNotFound = /404\.html$|_not-found/.test(page);
+// --- discover pages: sitemap + internal links ------------------------------
+const sitemapRes = await fetch(BASE + "/sitemap.xml");
+const sitemapXml = sitemapRes.ok ? await sitemapRes.text() : "";
+const queue = ["/"];
+for (const m of sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)) queue.push(new URL(decode(m[1])).pathname);
+const seen = new Set();
+const pages = [];
+while (queue.length) {
+  const page = queue.shift();
+  if (seen.has(page)) continue;
+  seen.add(page);
+  const loaded = await load(page);
+  if (loaded.status !== 200) {
+    fail(page, `expected HTTP 200, got ${loaded.status}`);
+    continue;
+  }
+  pages.push(page);
+  for (const m of loaded.html.matchAll(/<a\b[^>]*>/g)) {
+    const href = attr(m[0], "href") && decode(attr(m[0], "href"));
+    if (href && href.startsWith("/") && !href.startsWith("//")) {
+      const q = href.split("#")[0].split("?")[0];
+      if (q && !/\.[a-z0-9]+$/i.test(q) && !q.startsWith("/_next")) queue.push(q);
+    }
+  }
+}
+
+for (const page of pages) {
+  const { html } = await load(page);
+  const isNotFound = false;
 
   // --- SEO / structure -------------------------------------------------
   const h1s = (html.match(/<h1[\s>]/g) ?? []).length;
@@ -119,20 +143,19 @@ for (const file of htmlFiles) {
 
     internalChecked++;
     if (href.startsWith("#")) {
-      if (href.length > 1 && !idsOf(file).has(href.slice(1))) fail(page, `broken in-page anchor ${href}`);
+      if (href.length > 1 && !(await idsOf(page)).has(href.slice(1))) fail(page, `broken in-page anchor ${href}`);
       continue;
     }
     if (!href.startsWith("/")) {
       warn(page, `relative link not checked: ${href}`);
       continue;
     }
-    const target = resolveFile(href);
-    if (!target) {
+    if (!(await exists(href))) {
       fail(page, `broken internal link ${href}`);
       continue;
     }
     const frag = href.split("#")[1];
-    if (frag && target.endsWith(".html") && !idsOf(target).has(frag)) fail(page, `link ${href}: no element with id="${frag}" on the target page`);
+    if (frag && !(await idsOf(href)).has(frag)) fail(page, `link ${href}: no element with id="${frag}" on the target page`);
   }
 
   for (const m of html.matchAll(/<(?:img|script|link|source)\b[^>]*>/g)) {
@@ -143,53 +166,46 @@ for (const file of htmlFiles) {
       if (/^(https?:)?\/\//i.test(v)) {
         const isImg = m[0].startsWith("<img");
         const isPlainLink = m[0].startsWith("<link") && !/rel="(stylesheet|preload|modulepreload)"/.test(m[0]);
-        if (!isImg && !isPlainLink) fail(page, `external ${m[0].split(/[\s>]/)[0].slice(1)} ${v} would be blocked by the CSP (public/_headers)`);
+        if (!isImg && !isPlainLink) fail(page, `external ${m[0].split(/[\s>]/)[0].slice(1)} ${v} would be blocked by the CSP (next.config.ts)`);
         continue;
       }
       if (!v.startsWith("/")) continue;
       if (/rel="canonical"|rel="alternate"/.test(m[0])) continue;
       internalChecked++;
-      if (!resolveFile(v)) fail(page, `missing asset ${v}`);
+      if (!(await exists(v))) fail(page, `missing asset ${v}`);
     }
   }
 }
 
 // --- sitemap & robots ----------------------------------------------------
-const sitemapFile = path.join(OUT, "sitemap.xml");
-if (!existsSync(sitemapFile)) {
-  fail("/sitemap.xml", "missing");
+if (!sitemapRes.ok) {
+  fail("/sitemap.xml", `missing (HTTP ${sitemapRes.status})`);
 } else {
-  const xml = readFileSync(sitemapFile, "utf8");
-  for (const m of xml.matchAll(/<loc>([^<]+)<\/loc>/g)) {
+  for (const m of sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)) {
     const u = new URL(decode(m[1]));
-    if (!resolveFile(u.pathname)) fail("/sitemap.xml", `lists a URL with no page: ${u.pathname}`);
+    if (!(await exists(u.pathname))) fail("/sitemap.xml", `lists a URL with no page: ${u.pathname}`);
   }
 }
-const robotsFile = path.join(OUT, "robots.txt");
-if (!existsSync(robotsFile) || !/Sitemap:/i.test(readFileSync(robotsFile, "utf8"))) fail("/robots.txt", "missing or does not reference the sitemap");
+const robotsRes = await fetch(BASE + "/robots.txt");
+const robotsTxt = robotsRes.ok ? await robotsRes.text() : "";
+if (!/Sitemap:/i.test(robotsTxt)) fail("/robots.txt", "missing or does not reference the sitemap");
 
-// --- security headers ----------------------------------------------------
-// The same policy must ship in _headers (Netlify/Cloudflare) and vercel.json (Vercel).
+// --- security headers + 404 handling -------------------------------------
 {
-  const headersFile = path.join(OUT, "_headers");
-  const cspFromHeaders = existsSync(headersFile) ? readFileSync(headersFile, "utf8").match(/^\s*Content-Security-Policy:\s*(.+)$/m)?.[1]?.trim() : null;
-  if (!cspFromHeaders) fail("/_headers", "missing from the export or has no Content-Security-Policy");
-  let cspFromVercel = null;
-  try {
-    const v = JSON.parse(readFileSync("vercel.json", "utf8"));
-    cspFromVercel = v.headers?.flatMap((h) => h.headers).find((h) => h.key === "Content-Security-Policy")?.value ?? null;
-  } catch {
-    /* handled below */
+  const { headers } = await load("/");
+  for (const h of ["content-security-policy", "x-content-type-options", "x-frame-options", "referrer-policy", "strict-transport-security"]) {
+    if (!headers.get(h)) fail("/", `missing response header ${h}`);
   }
-  if (!cspFromVercel) fail("vercel.json", "missing or has no Content-Security-Policy");
-  if (cspFromHeaders && cspFromVercel && cspFromHeaders !== cspFromVercel) fail("vercel.json", "Content-Security-Policy differs from public/_headers; keep them identical");
+  if (headers.get("x-powered-by")) fail("/", "X-Powered-By header is exposed");
+  const missing = await fetch(BASE + "/this-page-does-not-exist");
+  await missing.body?.cancel();
+  if (missing.status !== 404) fail("/this-page-does-not-exist", `expected 404, got ${missing.status}`);
 }
 
 // A localhost base URL means NEXT_PUBLIC_SITE_URL was not set for this build.
-if (existsSync(sitemapFile) && readFileSync(sitemapFile, "utf8").includes("localhost")) {
+if (sitemapXml.includes("localhost")) {
   warn("/sitemap.xml", "URLs point at localhost. Set NEXT_PUBLIC_SITE_URL to your real domain before the production build.");
 }
-
 // --- external links (opt-in) ---------------------------------------------
 // Social platforms commonly block automated requests; those are reported as
 // "unverifiable" instead of failures.
@@ -218,12 +234,13 @@ if (checkExternal) {
 }
 
 // --- report --------------------------------------------------------------
-console.log(`\nChecked ${htmlFiles.length} pages, ${internalChecked} internal link/asset references, ${externalLinks.size} unique external links.`);
+console.log(`\nChecked ${pages.length} pages, ${internalChecked} internal link/asset references, ${externalLinks.size} unique external links.`);
 if (checkExternal) {
   for (const r of externalResults) console.log(`  [${r.verdict.padEnd(12)}] ${String(r.status || "---").padEnd(3)} ${r.url}${r.note ? ` (${r.note})` : ""}`);
   for (const r of externalResults) if (r.verdict === "broken") fail(r.pages[0], `external link failed (${r.status || r.note}): ${r.url}`);
 }
 if (warnings.length) console.log(`\nWarnings (${warnings.length}):\n  ` + warnings.join("\n  "));
+await server.stop();
 if (errors.length) {
   console.log(`\nFAILED (${errors.length}):\n  ` + errors.join("\n  "));
   process.exit(1);

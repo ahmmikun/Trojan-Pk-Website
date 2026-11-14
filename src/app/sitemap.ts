@@ -4,7 +4,7 @@ import { getPosts } from "@/content/blog";
 import { getEvents } from "@/content/events";
 import { getProjects } from "@/content/projects";
 
-export const dynamic = "force-static";
+export const revalidate = 3600;
 
 const staticRoutes = ["", "/about", "/community", "/projects", "/events", "/team", "/blog", "/join", "/privacy", "/terms"];
 

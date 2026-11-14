@@ -1,6 +1,6 @@
 /**
- * Static site identity and general settings. Everything on the site is
- * generated from files in this repository (no backend or database):
+ * Site identity and general settings. Content currently comes from files in
+ * this repository (a database is planned; see src/content/):
  *   - this file             site name, URL, application form link
  *   - src/config/social-links.ts   social + community links
  *   - src/data/*.ts         projects, events, team, achievements, stats, testimonials
@@ -20,7 +20,7 @@ export const siteConfig = {
   ogImage: "/brand/logo-full.png",
   /**
    * Membership applications are collected by an external form (the site has no
-   * backend). Paste the form link here, e.g. a Google Form URL. While null, the
+   * form backend yet). Paste the form link here, e.g. a Google Form URL. While null, the
    * Join page hides the Apply button and points visitors to the community channels.
    */
   applicationFormUrl: null as string | null,

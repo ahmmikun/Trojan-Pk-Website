@@ -1,8 +1,8 @@
 # Editing site content
 
-Trojans PK is a fully static site: there is no backend, database or admin panel.
-Everything on the site comes from files in this repository. To change something,
-edit the file, check it locally, and deploy.
+Trojans PK currently has no database or admin panel. Everything on the site comes from
+files in this repository. To change something, edit the file, check it locally, and
+deploy. Pages refresh in the background at most once an hour (ISR).
 
 Every content file is **validated when the site builds**. A typo (bad URL, unknown
 category, duplicate slug, missing field) stops the build with a message that names
@@ -84,8 +84,8 @@ Add to `src/data/events.ts`. Key fields: `type` (`HACKATHON`, `WORKSHOP`, `TECH_
 `MEETUP`, `COMPETITION`, `GATHERING`), `startsAt`, `location`, `organizer`, `registrationUrl`
 and `status`.
 
-**Upcoming vs previous is controlled by `status`**, not by today's date (the site is built
-once and served statically). Set `UPCOMING` or `ONGOING` to list it under "Upcoming", and change
+**Upcoming vs previous is controlled by `status`**, not by today's date (pages are
+rendered ahead of time and refreshed hourly). Set `UPCOMING` or `ONGOING` to list it under "Upcoming", and change
 it to `COMPLETED` (or `CANCELLED`) after the event, then redeploy.
 
 ## Team
@@ -113,15 +113,15 @@ to their profile on `/team`. Reading time is calculated automatically.
 
 ## Images
 
-Put files in `public/` and reference them by path. The static export serves images as-is
-(Next.js cannot resize them without a server), so compress them first, ideally under
-200 KB for covers and photos (WebP or well-compressed JPEG).
+Put files in `public/` and reference them by path, always through `next/image`. Next.js
+resizes them and serves AVIF/WebP, so upload a sensible original (roughly 2000 px wide at
+most, under 1 MB). Add `sizes` to `fill` images and `priority` to the main above-the-fold image.
 
 ## Checking your work
 
 ```bash
 npm run lint
 npm run typecheck
-npm run build        # validates all content and writes the site to ./out
-npm run check:site   # audits links, SEO and structured data in ./out
+npm run build        # validates all content and creates the production build
+npm run check:site   # starts the site and audits links, SEO, structured data and headers
 ```

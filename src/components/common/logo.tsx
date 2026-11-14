@@ -20,8 +20,8 @@ export function Logo({ className, markOnly = false, href = "/" }: Props) {
       <Image
         src="/brand/mark.png"
         alt=""
-        width={633}
-        height={782}
+        width={23}
+        height={28}
         priority
         className="h-7 w-auto"
       />

@@ -12,8 +12,8 @@ import { EventStatusChip, eventTypeLabel } from "@/features/events/event-card";
 import { eventDateLabel } from "@/lib/format";
 import { getEventBySlug, getEvents } from "@/content/events";
 
-// Static export: only the slugs returned below exist.
-export const dynamicParams = false;
+// Known slugs are prerendered at build time. Others render on demand; notFound() handles unknown ones.
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   const { upcoming, past } = await getEvents();
