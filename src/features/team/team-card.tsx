@@ -1,4 +1,5 @@
 import { Globe } from "lucide-react";
+import { HoverFrame } from "@/components/motion/hover-frame";
 import { ParallaxImage } from "@/components/motion/parallax-image";
 import { Chip } from "@/components/common/chip";
 import { Reveal } from "@/components/common/reveal";
@@ -8,25 +9,28 @@ import { cn } from "@/lib/utils";
 import type { TeamMember } from "@/types/content";
 
 export function MemberAvatar({ member, className }: { member: TeamMember; className?: string }) {
-  return (
-    <div className={cn("relative aspect-[4/5] overflow-hidden bg-surface-2", className)}>
-      {member.photo ? (
+  if (member.photo) {
+    return (
+      <HoverFrame label={null} className={cn("aspect-[4/5] bg-surface-2", className)}>
         <ParallaxImage
           src={member.photo}
           alt={member.photo.startsWith("/samples/") ? `Illustrative photo for ${member.name}` : `Portrait of ${member.name}`}
           sizes="(min-width: 1024px) 33vw, 100vw"
-          className="object-[50%_28%] transition-transform duration-700 ease-[var(--ease-premium)] group-hover:scale-[1.03]"
+          className="object-[50%_28%]"
         />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 flex items-end bg-[linear-gradient(160deg,color-mix(in_srgb,var(--foreground)_7%,transparent),transparent_60%)] p-6"
-        >
-          <span className="text-[7rem] leading-none font-medium tracking-tighter text-muted-foreground transition-transform duration-700 ease-[var(--ease-premium)] group-hover:-translate-y-1">
-            {initials(member.name)}
-          </span>
-        </div>
-      )}
+      </HoverFrame>
+    );
+  }
+  return (
+    <div className={cn("relative aspect-[4/5] overflow-hidden bg-surface-2", className)}>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 flex items-end bg-[linear-gradient(160deg,color-mix(in_srgb,var(--foreground)_7%,transparent),transparent_60%)] p-6"
+      >
+        <span className="text-[7rem] leading-none font-medium tracking-tighter text-muted-foreground transition-transform duration-700 ease-[var(--ease-premium)] group-hover:-translate-y-1">
+          {initials(member.name)}
+        </span>
+      </div>
     </div>
   );
 }

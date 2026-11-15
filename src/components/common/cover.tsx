@@ -1,3 +1,4 @@
+import { HoverFrame } from "@/components/motion/hover-frame";
 import { ParallaxImage } from "@/components/motion/parallax-image";
 import { cn } from "@/lib/utils";
 
@@ -9,24 +10,20 @@ type Props = {
   className?: string;
   priority?: boolean;
   sizes?: string;
+  /** Text on the hover cursor disc; null for covers that aren't links. */
+  hoverLabel?: string | null;
 };
 
 /**
  * Cover image. When no genuine image exists we render a quiet typographic
  * tile instead of stock photography.
  */
-export function Cover({ src, title, label, className, priority, sizes = "(min-width: 1024px) 33vw, 100vw" }: Props) {
+export function Cover({ src, title, label, className, priority, sizes = "(min-width: 1024px) 33vw, 100vw", hoverLabel = "View" }: Props) {
   if (src) {
     return (
-      <div className={cn("relative aspect-[16/10] overflow-hidden bg-surface-2", className)}>
-        <ParallaxImage
-          src={src}
-          alt={title}
-          sizes={sizes}
-          priority={priority}
-          className="transition-transform duration-700 ease-[var(--ease-premium)] group-hover:scale-[1.03]"
-        />
-      </div>
+      <HoverFrame label={hoverLabel} className={cn("aspect-[16/10] bg-surface-2", className)}>
+        <ParallaxImage src={src} alt={title} sizes={sizes} priority={priority} />
+      </HoverFrame>
     );
   }
   return (

@@ -8,7 +8,7 @@ import { Container } from "@/components/common/container";
 export default function NotFound() {
   return (
     <>
-      <header className="mx-auto flex h-[var(--nav-h)] w-full max-w-7xl items-center px-5 sm:px-8">
+      <header className="mx-auto flex h-[var(--nav-h)] w-full max-w-[100rem] items-center px-5 sm:px-8 lg:px-12">
         <Logo />
       </header>
       <main id="main" className="bg-wash relative flex flex-1 items-center border-y border-border">

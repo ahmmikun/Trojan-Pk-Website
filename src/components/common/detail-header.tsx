@@ -56,7 +56,7 @@ export function DetailHeader({ back, meta, title, summary, actions, children, co
       {cover ? (
         <Container className="mt-8 sm:mt-10">
           <Reveal immediate delay={0.3}>
-            <Cover src={cover.src} title={cover.title} label={cover.label} priority sizes="(min-width: 1280px) 1216px, 100vw" className="aspect-[4/3] rounded-2xl sm:aspect-[21/9]" />
+            <Cover src={cover.src} title={cover.title} label={cover.label} priority hoverLabel={null} sizes="(min-width: 1600px) 1504px, 100vw" className="aspect-[4/3] rounded-2xl sm:aspect-[21/9]" />
           </Reveal>
         </Container>
       ) : null}

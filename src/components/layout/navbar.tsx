@@ -71,7 +71,7 @@ export function Navbar({ socialLinks }: { socialLinks: ResolvedSocialLink[] }) {
       >
         Skip to content
       </a>
-      <div className="mx-auto grid h-[var(--nav-h)] w-full max-w-7xl grid-cols-[1fr_auto] items-center gap-6 px-5 sm:px-8 lg:grid-cols-[1fr_auto_1fr]">
+      <div className="mx-auto grid h-[var(--nav-h)] w-full max-w-[100rem] grid-cols-[1fr_auto] items-center gap-6 px-5 sm:px-8 lg:grid-cols-[1fr_auto_1fr] lg:px-12">
         <div className="justify-self-start">
           <Logo />
         </div>

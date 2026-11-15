@@ -1,4 +1,5 @@
 import { ArrowUpRight, Trophy } from "lucide-react";
+import { HoverFrame } from "@/components/motion/hover-frame";
 import { ParallaxImage } from "@/components/motion/parallax-image";
 import { ButtonLink } from "@/components/common/button-link";
 import { Chip } from "@/components/common/chip";
@@ -53,8 +54,10 @@ export function AchievementSection({ achievement }: Props) {
       {achievement.images.length > 0 ? (
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {achievement.images.map((img) => (
-            <li key={img.src} className="relative aspect-[16/10] overflow-hidden rounded-2xl">
-              <ParallaxImage src={img.src} alt={img.alt} sizes="(min-width: 1024px) 33vw, 100vw" />
+            <li key={img.src}>
+              <HoverFrame label={null} className="aspect-[16/10] rounded-2xl">
+                <ParallaxImage src={img.src} alt={img.alt} sizes="(min-width: 1024px) 33vw, 100vw" />
+              </HoverFrame>
             </li>
           ))}
         </ul>

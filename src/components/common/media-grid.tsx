@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HoverFrame } from "@/components/motion/hover-frame";
 import { ParallaxImage } from "@/components/motion/parallax-image";
 import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { cn } from "@/lib/utils";
@@ -45,41 +46,39 @@ function MediaTile({ item, index, aspect, sizes, priority }: { item: MediaItem; 
   const number = String(index + 1).padStart(2, "0");
   return (
     <article className="group relative">
-      <div className={cn("relative overflow-hidden rounded-md bg-surface-2", aspect)}>
+      <HoverFrame
+        className={cn("rounded-md bg-surface-2", aspect)}
+        overlay={
+          <>
+            {/* Title over the media, like a cover lockup. Decorative: the real title is the link below. */}
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center p-8">
+              <span
+                className={cn(
+                  "max-w-[16ch] text-center text-3xl leading-none font-medium tracking-tighter transition-[transform,opacity] duration-700 ease-[var(--ease-premium)] group-data-[media-hover=on]:scale-[0.96] group-data-[media-hover=on]:opacity-0 sm:text-4xl",
+                  item.image ? "text-white drop-shadow-[0_2px_20px_rgb(0_0_0/0.45)]" : "text-foreground/90",
+                )}
+              >
+                {item.title}
+              </span>
+            </div>
+            {item.badge ? (
+              <span className="absolute top-4 left-4 rounded-full bg-background/80 px-2.5 py-1 text-xs text-foreground backdrop-blur-md">{item.badge}</span>
+            ) : null}
+          </>
+        }
+      >
         {item.image ? (
           <>
-            <ParallaxImage
-              src={item.image}
-              alt=""
-              sizes={sizes}
-              priority={priority}
-              className="transition-transform duration-[1200ms] ease-[var(--ease-premium)] group-hover:scale-[1.04]"
-            />
-            <div aria-hidden="true" className="absolute inset-0 bg-black/25 transition-colors duration-500 group-hover:bg-black/40" />
+            <ParallaxImage src={item.image} alt="" sizes={sizes} priority={priority} />
+            <div aria-hidden="true" className="absolute inset-0 bg-black/25 transition-colors duration-700 group-data-[media-hover=on]:bg-black/5" />
           </>
         ) : (
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-[radial-gradient(120%_90%_at_20%_0%,color-mix(in_srgb,var(--foreground)_9%,transparent),transparent_60%),radial-gradient(90%_70%_at_100%_100%,color-mix(in_srgb,var(--brand-blue)_18%,transparent),transparent_70%)] transition-transform duration-[1200ms] ease-[var(--ease-premium)] group-hover:scale-[1.04]"
+            className="absolute inset-0 bg-[radial-gradient(120%_90%_at_20%_0%,color-mix(in_srgb,var(--foreground)_9%,transparent),transparent_60%),radial-gradient(90%_70%_at_100%_100%,color-mix(in_srgb,var(--brand-blue)_18%,transparent),transparent_70%)]"
           />
         )}
-
-        {/* Title over the media, like a cover lockup. Decorative: the real title is the link below. */}
-        <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center p-8">
-          <span
-            className={cn(
-              "max-w-[16ch] text-center text-3xl leading-none font-medium tracking-tighter transition-transform duration-700 ease-[var(--ease-premium)] group-hover:scale-[1.03] sm:text-4xl",
-              item.image ? "text-white drop-shadow-[0_2px_20px_rgb(0_0_0/0.45)]" : "text-foreground/90",
-            )}
-          >
-            {item.title}
-          </span>
-        </div>
-
-        {item.badge ? (
-          <span className="absolute top-4 left-4 rounded-full bg-background/80 px-2.5 py-1 text-xs text-foreground backdrop-blur-md">{item.badge}</span>
-        ) : null}
-      </div>
+      </HoverFrame>
 
       <div className="mt-3 grid grid-cols-[auto_1fr_auto] items-start gap-x-4 text-sm">
         <span aria-hidden="true" className="font-mono text-xs leading-5 text-foreground">[ {number} ]</span>

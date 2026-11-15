@@ -261,3 +261,9 @@
     background-size: 100% 1px;
   }
 }
+
+/* HoverFrame: the View disc replaces the cursor over linked image tiles. */
+[data-media-hover="on"],
+[data-media-hover="on"] * {
+  cursor: none;
+}
