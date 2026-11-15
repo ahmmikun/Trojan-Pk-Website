@@ -8,6 +8,8 @@ import Link from "next/link";
 import { useRef } from "react";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
+// Mobile browsers resize the viewport as the address bar hides; don't re-layout the pin for that.
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 export type Principle = { title: string; body: string };
 
@@ -124,7 +126,8 @@ const face = {
  *   3. The network collapses and an isometric CSS 3D city rises: "And start shipping real products."
  *   4. The camera pushes into the city, which becomes a backdrop for the mission and its principles.
  *
- * Without JS, below 768px, or with reduced motion, only the final mission content renders, in normal flow.
+ * Phones get scenes 1-3 pinned (portrait layout) and the mission as a normal section after them.
+ * Without JS or with reduced motion, only the final mission content renders, in normal flow.
  */
 export function MissionStory({ eyebrow, title, description, principles }: Props) {
   const root = useRef<HTMLElement>(null);
@@ -135,10 +138,44 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
       if (!el) return;
       const mm = gsap.matchMedia();
 
-      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
-        el.setAttribute("data-story", "on");
+      mm.add({ desktop: "(min-width: 768px)", motion: "(prefers-reduced-motion: no-preference)" }, (ctx) => {
+        const { desktop, motion } = ctx.conditions as { desktop: boolean; motion: boolean };
+        if (!motion) return;
+        // Desktop pins the whole story including the mission scene. Phones pin
+        // scenes 1-3 only; the mission then scrolls in as a normal section.
+        el.setAttribute("data-story", desktop ? "desktop" : "mobile");
         const q = gsap.utils.selector(el);
         const caps = q("[data-cap]");
+
+        // Phones: re-map the wide network into a portrait layout (positions only;
+        // the links stay the same) so it fills a tall screen instead of a thin strip.
+        const svg = q("[data-net]")[0] as unknown as SVGSVGElement;
+        const MW = 400;
+        const MH = 490;
+        const P = desktop
+          ? NODES
+          : NODES.map((n) => ({ x: r1(MW / 2 + ((n.y - CY) / 270) * 180), y: r1(MH / 2 + ((n.x - CX) / 720) * 225) }));
+        const hx = P[0].x;
+        const hy = P[0].y;
+        svg.setAttribute("viewBox", desktop ? "0 0 1600 800" : `0 0 ${MW} ${MH}`);
+        svg.setAttribute("preserveAspectRatio", desktop ? "xMidYMid slice" : "xMidYMid meet");
+        q("[data-node]").forEach((n, i) => {
+          n.setAttribute("cx", String(P[i + 1].x));
+          n.setAttribute("cy", String(P[i + 1].y));
+          n.dataset.x = String(P[i + 1].x);
+          n.dataset.y = String(P[i + 1].y);
+        });
+        q("[data-edge]").forEach((line, i) => {
+          const [a, b] = EDGES[i];
+          line.setAttribute("x1", String(P[a].x));
+          line.setAttribute("y1", String(P[a].y));
+          line.setAttribute("x2", String(P[b].x));
+          line.setAttribute("y2", String(P[b].y));
+        });
+        q("[data-hub], [data-ring], [data-breath], [data-burst]").forEach((c) => {
+          c.setAttribute("cx", String(hx));
+          c.setAttribute("cy", String(hy));
+        });
 
         gsap.set(caps, { autoAlpha: 0 });
         // Explicit y: 0 everywhere: on refresh GSAP would otherwise re-read the
@@ -147,7 +184,7 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
         gsap.set(q("[data-hub]"), { scale: 0, transformOrigin: "50% 50%" });
         gsap.set(q("[data-ring], [data-burst]"), { scale: 0.3, opacity: 0, transformOrigin: "50% 50%" });
         q("[data-node]").forEach((n) => {
-          gsap.set(n, { x: (Number(n.dataset.x) - CX) * 1.7, y: (Number(n.dataset.y) - CY) * 1.7, opacity: 0 });
+          gsap.set(n, { x: (Number(n.dataset.x) - hx) * 1.7, y: (Number(n.dataset.y) - hy) * 1.7, opacity: 0 });
         });
         gsap.set(q("[data-edge]"), { strokeDashoffset: 1, opacity: 0 });
         gsap.set(q("[data-pulses]"), { autoAlpha: 0 });
@@ -156,8 +193,10 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
         gsap.set(q("[data-plane]"), { rotation: 0, scale: 0.55 });
         gsap.set(q("[data-block]"), { "--f": 0, "--lift": 0 });
         gsap.set(q("[data-accent]"), { "--lift": 9, visibility: "hidden" });
-        gsap.set(q("[data-fw]"), { yPercent: 115, y: 0 });
-        gsap.set(q("[data-ff]"), { autoAlpha: 0, y: 28 });
+        if (desktop) {
+          gsap.set(q("[data-fw]"), { yPercent: 115, y: 0 });
+          gsap.set(q("[data-ff]"), { autoAlpha: 0, y: 28 });
+        }
         gsap.set(q("[data-hint], [data-rail]"), { autoAlpha: 1 });
 
         /* Ambient loops (time-based, not scrubbed): the lone builder breathes,
@@ -167,8 +206,8 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
           const [a, b] = PULSES[i];
           gsap.fromTo(
             dot,
-            { attr: { cx: NODES[a].x, cy: NODES[a].y } },
-            { attr: { cx: NODES[b].x, cy: NODES[b].y }, duration: 1.1 + (i % 4) * 0.25, ease: "power1.inOut", repeat: -1, yoyo: true, delay: (i % 6) * 0.3 },
+            { attr: { cx: P[a].x, cy: P[a].y } },
+            { attr: { cx: P[b].x, cy: P[b].y }, duration: 1.1 + (i % 4) * 0.25, ease: "power1.inOut", repeat: -1, yoyo: true, delay: (i % 6) * 0.3 },
           );
         });
 
@@ -179,7 +218,7 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
         const CAPTION_AT: [number, number][] = [
           [0.1, 1.6],
           [2.6, 4.3],
-          [5.7, 7.3],
+          [5.7, desktop ? 7.3 : 99],
         ];
         const SCENE_AT = [0, 2.2, 4.9, 7.4];
         const railItems = q("[data-rail-item]");
@@ -221,8 +260,8 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
             id: "mission-story",
             trigger: el,
             start: "top top",
-            end: "+=520%",
-            pin: q("[data-pin]")[0],
+            end: desktop ? "+=520%" : "+=430%",
+            pin: q(desktop ? "[data-pin]" : "[data-stage]")[0],
             scrub: 1,
             anticipatePin: 1,
             invalidateOnRefresh: true,
@@ -248,7 +287,7 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
           .to(q("[data-edge]"), { opacity: 0, duration: 0.35, ease: "power1.in" }, 4.3)
           .to(
             q("[data-node]"),
-            { x: (_: number, t: SVGElement) => CX - Number(t.dataset.x), y: (_: number, t: SVGElement) => CY - Number(t.dataset.y), duration: 0.6, stagger: { each: 0.008, from: "edges" }, ease: "power3.in" },
+            { x: (_: number, t: SVGElement) => hx - Number(t.dataset.x), y: (_: number, t: SVGElement) => hy - Number(t.dataset.y), duration: 0.6, stagger: { each: 0.008, from: "edges" }, ease: "power3.in" },
             4.3,
           )
           .to(q("[data-hub]"), { scale: 2.2, duration: 0.4, ease: "power2.in" }, 4.55)
@@ -271,6 +310,12 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
           .to(accents, { "--lift": 0, duration: 0.55, stagger: 0.12, ease: "power3.in" }, 6.1)
           .to(q("[data-plane]"), { rotation: -57, duration: 1.1, ease: "sine.inOut" }, 6.3);
 
+        if (!desktop) {
+          // Phones: hold on the finished city; the mission section follows below the pin.
+          tl.to({}, { duration: 0.8 });
+          return () => el.removeAttribute("data-story");
+        }
+
         // Scene 4: the city sinks and recedes into a faint backdrop; the mission takes over.
         tl.to(q("[data-plane]"), { rotation: -18, scale: 1.6, duration: 1.6, ease: "power2.inOut" }, 7.4)
           .to(q("[data-cam]"), { y: "24vh", duration: 1.6, ease: "power2.inOut" }, 7.4)
@@ -290,10 +335,16 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
 
   return (
     <section ref={root} id="about-community" aria-labelledby="mission-title" className="group/story relative border-t border-border">
-      <div data-pin className="relative overflow-hidden group-data-[story=on]/story:h-dvh">
-        {/* ---- Story layers (decorative; hidden until the story is active) ---- */}
-        <div aria-hidden="true" className="hidden group-data-[story=on]/story:block">
-          <svg data-net viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full">
+      <div data-pin className="relative">
+        {/* ---- Story stage (decorative; hidden until the story is active) ---- */}
+        <div aria-hidden="true" data-stage className="relative hidden h-svh overflow-hidden group-data-[story]/story:block">
+          {/* Phones: the wide network is turned upright (rotated 90deg) to fill a portrait screen. */}
+          <svg
+            data-net
+            viewBox="0 0 1600 800"
+            preserveAspectRatio="xMidYMid slice"
+            className="absolute inset-x-0 top-[13svh] h-[57svh] w-full md:inset-0 md:h-full"
+          >
             <g className="text-foreground/25">
               {EDGES.map(([a, b]) => (
                 <line
@@ -326,7 +377,7 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
             <circle data-hub cx={CX} cy={CY} r="9" fill="var(--success)" />
           </svg>
 
-          <div data-city className="absolute inset-0 flex items-center justify-center [--cell:min(4.4vw,6.2vh)] [perspective:2400px]">
+          <div data-city className="absolute inset-0 flex items-center justify-center [--cell:min(8vw,5.4svh)] md:[--cell:min(4.4vw,6.2vh)] [perspective:2400px]">
             <div data-cam className="[transform-style:preserve-3d]">
               <div
                 data-plane
@@ -351,10 +402,10 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
           </div>
 
           {/* Scene rail: which chapter of the story you are in. */}
-          <ol data-rail className="invisible absolute top-1/2 right-6 flex -translate-y-1/2 flex-col gap-4 text-xs lg:right-12">
+          <ol data-rail className="invisible absolute top-[calc(var(--nav-h)+0.5rem)] left-5 flex gap-4 text-xs md:top-1/2 md:right-6 md:left-auto md:-translate-y-1/2 md:flex-col lg:right-12">
             {["Alone", "Connect", "Build", "Mission"].map((label, i) => (
-              <li key={label} data-rail-item data-active="false" className="group/rail flex items-center justify-end gap-3">
-                <span className="text-muted-foreground opacity-0 transition-opacity duration-500 group-data-[active=true]/rail:text-foreground group-data-[active=true]/rail:opacity-100">
+              <li key={label} data-rail-item data-active="false" className="group/rail flex flex-row-reverse items-center justify-end gap-2 last:hidden md:flex-row md:gap-3 md:last:flex">
+                <span className="hidden text-muted-foreground opacity-0 transition-opacity md:inline duration-500 group-data-[active=true]/rail:text-foreground group-data-[active=true]/rail:opacity-100">
                   {label}
                 </span>
                 <span className="tabular text-muted-foreground transition-colors duration-500 group-data-[active=true]/rail:text-foreground">{String(i + 1).padStart(2, "0")}</span>
@@ -367,7 +418,7 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
             <p
               key={c}
               data-cap
-              className="absolute inset-x-0 bottom-[11vh] px-6 text-center text-[clamp(2rem,4.2vw,4.25rem)] leading-none font-medium tracking-[-0.045em]"
+              className="absolute inset-x-0 bottom-[10svh] px-6 text-center text-[clamp(2.1rem,4.2vw,4.25rem)] leading-[1.02] text-balance font-medium tracking-[-0.045em]"
             >
               <Words text={c} attr="data-w" />
             </p>
@@ -379,7 +430,7 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
         </div>
 
         {/* ---- Final scene: the mission. Plain content without the story. ---- */}
-        <div className="relative py-24 sm:py-32 group-data-[story=on]/story:absolute group-data-[story=on]/story:inset-0 group-data-[story=on]/story:flex group-data-[story=on]/story:items-center group-data-[story=on]/story:py-0">
+        <div className="relative py-24 sm:py-32 group-data-[story=desktop]/story:absolute group-data-[story=desktop]/story:inset-0 group-data-[story=desktop]/story:flex group-data-[story=desktop]/story:items-center group-data-[story=desktop]/story:py-0">
           <div className="mx-auto w-full max-w-[100rem] px-5 sm:px-8 lg:px-12">
             <p data-ff className="flex items-center gap-2.5 text-sm text-muted-foreground">
               <span aria-hidden="true" className="size-1.5 rounded-full bg-success" />
