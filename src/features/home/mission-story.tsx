@@ -11,6 +11,9 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 // Mobile browsers resize the viewport as the address bar hides; don't re-layout the pin for that.
 ScrollTrigger.config({ ignoreMobileResize: true });
 
+/** Phones play the story once per page load; a reload re-evaluates this module and resets it. */
+let playedThisLoad = false;
+
 export type Principle = { title: string; body: string };
 
 type Props = {
@@ -126,7 +129,7 @@ const face = {
  *   3. The network collapses and an isometric CSS 3D city rises: "And start shipping real products."
  *   4. The camera pushes into the city, which becomes a backdrop for the mission and its principles.
  *
- * Phones get scenes 1-3 pinned (portrait layout) and the mission as a normal section after them.
+ * Phones get scenes 1-3 as a self-playing film (portrait layout, once per page load) and the mission as a normal section after it.
  * Without JS or with reduced motion, only the final mission content renders, in normal flow.
  */
 export function MissionStory({ eyebrow, title, description, principles }: Props) {
@@ -141,8 +144,8 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
       mm.add({ desktop: "(min-width: 768px)", motion: "(prefers-reduced-motion: no-preference)" }, (ctx) => {
         const { desktop, motion } = ctx.conditions as { desktop: boolean; motion: boolean };
         if (!motion) return;
-        // Desktop pins the whole story including the mission scene. Phones pin
-        // scenes 1-3 only; the mission then scrolls in as a normal section.
+        // Desktop pins the whole story including the mission scene and scrubs it with scroll. Phones play
+        // scenes 1-3 by themselves once; the mission then follows as a normal section.
         el.setAttribute("data-story", desktop ? "desktop" : "mobile");
         const q = gsap.utils.selector(el);
         const caps = q("[data-cap]");
@@ -254,22 +257,25 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
         // A hot reload can leave the previous instance behind; never run two.
         ScrollTrigger.getById("mission-story")?.kill(true);
 
-        const tl = gsap.timeline({
-          defaults: { ease: "none" },
-          scrollTrigger: {
-            id: "mission-story",
-            trigger: el,
-            start: "top top",
-            end: desktop ? "+=520%" : "+=430%",
-            pin: q(desktop ? "[data-pin]" : "[data-stage]")[0],
-            scrub: 1,
-            anticipatePin: 1,
-            invalidateOnRefresh: true,
-            // Use scroll progress (not the smoothed playhead) so the caption always matches where you are.
-            onUpdate: (self) => sync(self.progress * (self.animation?.duration() ?? 0), false, self.direction >= 0),
-            onRefresh: (self) => sync(self.progress * (self.animation?.duration() ?? 0), true),
-          },
-        });
+        const tl = desktop
+          ? gsap.timeline({
+              defaults: { ease: "none" },
+              scrollTrigger: {
+                id: "mission-story",
+                trigger: el,
+                start: "top top",
+                end: "+=520%",
+                pin: q("[data-pin]")[0],
+                scrub: 1,
+                anticipatePin: 1,
+                invalidateOnRefresh: true,
+                // Use scroll progress (not the smoothed playhead) so the caption always matches where you are.
+                onUpdate: (self) => sync(self.progress * (self.animation?.duration() ?? 0), false, self.direction >= 0),
+                onRefresh: (self) => sync(self.progress * (self.animation?.duration() ?? 0), true),
+              },
+            })
+          : // Phones: a self-playing film, no pin and no scrubbing. Captions follow the playhead.
+            gsap.timeline({ defaults: { ease: "none" }, paused: true, onUpdate: () => sync(tl.time(), false) });
 
         // Scene 1: alone.
         tl.to(q("[data-hint]"), { autoAlpha: 0, duration: 0.4 }, 0)
@@ -311,8 +317,25 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
           .to(q("[data-plane]"), { rotation: -57, duration: 1.1, ease: "sine.inOut" }, 6.3);
 
         if (!desktop) {
-          // Phones: hold on the finished city; the mission section follows below the pin.
-          tl.to({}, { duration: 0.8 });
+          tl.to({}, { duration: 0.6 });
+          gsap.set(q("[data-hint]"), { autoAlpha: 0 });
+          if (playedThisLoad) {
+            // Already watched during this page load (e.g. navigated away and back): rest on the finished city.
+            tl.progress(1);
+            sync(tl.time(), true);
+          } else {
+            // Plays once, when most of the stage is on screen. A reload resets the module, so it plays again.
+            ScrollTrigger.create({
+              id: "mission-story",
+              trigger: q("[data-stage]")[0],
+              start: "top 35%",
+              once: true,
+              onEnter: () => {
+                playedThisLoad = true;
+                tl.play();
+              },
+            });
+          }
           return () => el.removeAttribute("data-story");
         }
 
