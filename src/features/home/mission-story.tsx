@@ -250,7 +250,8 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
             instant,
             down,
           );
-          const scene = SCENE_AT.filter((s) => time >= s).length - 1;
+          // Phones have no scene 4 (the mission is a normal section), so the rail stops at 03.
+          const scene = Math.min(desktop ? 3 : 2, SCENE_AT.filter((s) => time >= s).length - 1);
           railItems.forEach((item, i) => item.setAttribute("data-active", String(i === scene)));
         };
 
