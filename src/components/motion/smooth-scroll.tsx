@@ -1,8 +1,12 @@
 "use client";
 
 import Lenis from "lenis";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect, useRef } from "react";
 import { useIntroDone } from "./intro-store";
+
+gsap.registerPlugin(ScrollTrigger);
 
 /**
  * Lenis smooth scrolling for the whole page. Skipped for visitors who prefer
@@ -17,6 +21,8 @@ export function SmoothScroll() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     lenis.current = new Lenis({ lerp: 0.1, wheelMultiplier: 1, autoRaf: true });
+    // Keep GSAP ScrollTrigger (pinned story sections) in step with the smoothed scroll.
+    lenis.current.on("scroll", ScrollTrigger.update);
     return () => {
       lenis.current?.destroy();
       lenis.current = null;

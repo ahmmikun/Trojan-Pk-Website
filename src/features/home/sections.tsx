@@ -10,6 +10,7 @@ import { focusAreas } from "@/config/copy";
 import { eventToMedia } from "@/features/events/event-card";
 import { ProjectCard } from "@/features/projects/project-card";
 import { ExpandingGallery } from "./expanding-gallery";
+import { MissionStory } from "./mission-story";
 import { TeamPreviewCard } from "@/features/team/team-card";
 import { getEventsPreview } from "@/content/events";
 import { getFeaturedProjects } from "@/content/projects";
@@ -24,33 +25,12 @@ const differentiators = [
 
 export function Introduction() {
   return (
-    <Section id="about-community">
-      <div className="grid gap-16 lg:grid-cols-12">
-        <div className="lg:col-span-5">
-          <SectionHeading
-            eyebrow="Our mission"
-            title="A place to learn by building, together."
-            description="Trojans PK brings developers, students, designers and innovators together to share knowledge, contribute to open source and build real products."
-          />
-          <Reveal delay={0.1}>
-            <ButtonLink href="/about" variant="outline" className="mt-10">
-              About Trojans PK <ArrowRight />
-            </ButtonLink>
-          </Reveal>
-        </div>
-        <Stagger className="border-b border-border lg:col-span-7">
-          {differentiators.map((d, i) => (
-            <StaggerItem key={d.title} className="group grid gap-3 border-t border-border py-8 sm:grid-cols-[3rem_1fr] sm:gap-6">
-              <p className="tabular text-sm text-muted-foreground">{String(i + 1).padStart(2, "0")}</p>
-              <div className="transition-transform duration-500 ease-[var(--ease-premium)] group-hover:translate-x-1">
-                <h3 className="text-2xl font-medium tracking-tight">{d.title}</h3>
-                <p className="mt-2 max-w-md text-base leading-snug text-muted-foreground">{d.body}</p>
-              </div>
-            </StaggerItem>
-          ))}
-        </Stagger>
-      </div>
-    </Section>
+    <MissionStory
+      eyebrow="Our mission"
+      title="A place to learn by building, together."
+      description="Trojans PK brings developers, students, designers and innovators together to share knowledge, contribute to open source and build real products."
+      principles={differentiators}
+    />
   );
 }
 
