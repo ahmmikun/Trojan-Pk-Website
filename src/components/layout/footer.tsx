@@ -89,15 +89,21 @@ export async function Footer() {
 
       {/* Oversized wordmark. Decorative SVG: the site name is already in the header and copyright line. */}
       <div aria-hidden="true" className="select-none px-3 sm:px-5">
-        <svg viewBox="0 0 1000 205" className="block h-auto w-full text-foreground/[0.07]" role="presentation" focusable="false">
+        {/* No textLength: forcing a width distorts the glyphs. 330px Helvetica at -0.06em is ~950 units wide. */}
+        <svg viewBox="0 0 1000 318" className="block h-auto w-full text-foreground" role="presentation" focusable="false">
+          {/* Solid at the top, fading into the background toward the bottom. */}
+          <defs>
+            <linearGradient id="footer-wordmark-fade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="55%" stopColor="currentColor" stopOpacity="1" />
+              <stop offset="88%" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
+          </defs>
           <text
             x="500"
-            y="190"
+            y="245"
             textAnchor="middle"
-            textLength="990"
-            lengthAdjust="spacingAndGlyphs"
-            fill="currentColor"
-            style={{ font: "500 250px var(--font-sans)", letterSpacing: "-0.06em" }}
+            fill="url(#footer-wordmark-fade)"
+            style={{ font: "500 330px var(--font-sans)", letterSpacing: "-0.06em" }}
           >
             Trojans
           </text>
