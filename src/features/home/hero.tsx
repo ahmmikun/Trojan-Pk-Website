@@ -4,13 +4,13 @@ import { Container } from "@/components/common/container";
 import { Reveal } from "@/components/common/reveal";
 import { WordReveal } from "@/components/motion/motion";
 import { SocialIconLinks } from "@/components/social/social-icon-links";
-import { siteConfig } from "@/config/site";
+import { getSiteSettings } from "@/content/site-content";
 import { getSocialLinks } from "@/content/social";
 import { RotatingWords, Spotlight } from "./hero-effects";
 
 /** Centered, text-only hero: tagline, headline, one line of copy, two calls to action. */
 export async function Hero() {
-  const social = await getSocialLinks();
+  const [social, settings] = await Promise.all([getSocialLinks(), getSiteSettings()]);
   return (
     <section className="bg-wash relative -mt-[var(--nav-h)] overflow-hidden border-b border-border">
       <Spotlight />
@@ -18,7 +18,7 @@ export async function Hero() {
         <Reveal immediate>
           <p className="inline-flex items-center gap-2.5 rounded-full border border-border bg-foreground/[0.03] px-3.5 py-1.5 text-sm text-muted-foreground">
             <span aria-hidden="true" className="size-1.5 rounded-full bg-success" />
-            {siteConfig.tagline}
+            {settings.tagline}
           </p>
         </Reveal>
 

@@ -10,7 +10,8 @@ import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { aboutCopy, coreValues } from "@/config/copy";
 import { FinalCta } from "@/features/home/sections";
 import { TeamPreviewCard } from "@/features/team/team-card";
-import { getFeaturedAchievement } from "@/content/site-content";
+import { getFeaturedAchievement, getPartners } from "@/content/site-content";
+import { PartnersSection } from "@/features/partners/partners-section";
 import { getTeam } from "@/content/team";
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
  * blocks are split up by the mission/vision panels and the team portraits.
  */
 export default async function AboutPage() {
-  const [team, achievement] = await Promise.all([getTeam(), getFeaturedAchievement()]);
+  const [team, achievement, partners] = await Promise.all([getTeam(), getFeaturedAchievement(), getPartners()]);
 
   return (
     <>
@@ -96,6 +97,9 @@ export default async function AboutPage() {
           </div>
         </Section>
       ) : null}
+
+      {/* 4b. Proof by association: who we have worked with */}
+      <PartnersSection partners={partners} />
 
       {/* 5. Principles */}
       <Section id="values">

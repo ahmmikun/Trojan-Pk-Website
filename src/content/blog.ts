@@ -5,6 +5,7 @@ import { BLOG_CATEGORIES, type BlogPost } from "@/types/content";
 import { blogFrontMatterSchema } from "./schemas";
 import { allTeam, ContentError } from "./validated";
 import { showDrafts } from "./visibility";
+import { dbPosts } from "./db";
 
 const BLOG_DIR = path.join(process.cwd(), "content", "blog");
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -62,7 +63,11 @@ async function readPosts(): Promise<BlogPost[]> {
 
 /** Published posts only (drafts appear in `next dev` only), newest first. */
 export async function getPosts(): Promise<BlogPost[]> {
-  return readPosts();
+  // Posts written in /admin (Supabase) are merged with content/blog; a database post wins on the same slug.
+  const [files, db] = await Promise.all([readPosts(), dbPosts()]);
+  if (!db?.length) return files;
+  const slugs = new Set(db.map((p) => p.slug));
+  return [...db, ...files.filter((p) => !slugs.has(p.slug))].sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {

@@ -10,7 +10,7 @@ import { Section, SectionHeading } from "@/components/common/section";
 import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { InviteCard } from "@/components/social/invite-card";
 import { joinCopy } from "@/config/copy";
-import { siteConfig } from "@/config/site";
+import { getSiteSettings } from "@/content/site-content";
 import { getInviteLinks, getSocialLink } from "@/content/social";
 
 export const metadata: Metadata = {
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
 };
 
 export default async function JoinPage() {
-  const [invites, email] = await Promise.all([getInviteLinks(), getSocialLink("email")]);
-  const formUrl = siteConfig.applicationFormUrl;
+  const [invites, email, settings] = await Promise.all([getInviteLinks(), getSocialLink("email"), getSiteSettings()]);
+  const formUrl = settings.applicationFormUrl;
 
   return (
     <>

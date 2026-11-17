@@ -11,6 +11,7 @@ import { Section, SectionHeading } from "@/components/common/section";
 import { Stagger, StaggerItem } from "@/components/motion/motion";
 import { BrandIcon } from "@/components/social/brand-icon";
 import { siteConfig } from "@/config/site";
+import { detailMetadata } from "@/lib/seo";
 import { ProjectCard } from "@/features/projects/project-card";
 import { formatDate } from "@/lib/format";
 import { getCategoryName, getProjectBySlug, getProjects, getRelatedProjects } from "@/content/projects";
@@ -26,12 +27,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/projects/[slug]">): Promise<Metadata> {
   const project = await getProjectBySlug((await params).slug);
   if (!project) return {};
-  return {
-    title: project.title,
-    description: project.summary,
-    alternates: { canonical: `/projects/${project.slug}` },
-    openGraph: { title: project.title, description: project.summary, type: "article", url: `/projects/${project.slug}`, images: project.coverImage ? [project.coverImage] : undefined },
-  };
+  return detailMetadata({ path: `/projects/${project.slug}`, title: project.title, description: project.summary, image: project.coverImage, seo: project.seo });
 }
 
 export default async function ProjectPage({ params }: PageProps<"/projects/[slug]">) {

@@ -24,7 +24,18 @@ export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
 
 export type Contributor = { name: string; url?: string | null };
 
-export type Project = {
+/** Optional per-page search and social settings, edited in /admin (SEO tab). Empty values fall back to the content. */
+export type SeoOverrides = {
+  title: string | null;
+  description: string | null;
+  image: string | null;
+  noindex: boolean;
+};
+
+/** Fields that only exist for database content: SEO overrides and the last edit time (sitemap lastmod). */
+export type DbMeta = { seo?: SeoOverrides; modifiedAt?: Date | null };
+
+export type Project = DbMeta & {
   slug: string;
   title: string;
   summary: string;
@@ -58,7 +69,7 @@ export type EventType = (typeof EVENT_TYPES)[number]["value"];
 
 export type EventStatus = "UPCOMING" | "ONGOING" | "COMPLETED" | "CANCELLED";
 
-export type CommunityEvent = {
+export type CommunityEvent = DbMeta & {
   slug: string;
   title: string;
   summary: string;
@@ -76,6 +87,8 @@ export type CommunityEvent = {
   isFeatured: boolean;
   /** Set to false to keep the event off the site (draft). */
   published: boolean;
+  /** Placeholder content: kept out of the sitemap and search results. */
+  isSample?: boolean;
 };
 
 export type TeamLink = { label: string; url: string };
@@ -103,7 +116,7 @@ export const BLOG_CATEGORIES = [
   { slug: "announcements", name: "Community Announcements" },
 ] as const;
 
-export type BlogPost = {
+export type BlogPost = DbMeta & {
   slug: string;
   title: string;
   excerpt: string;
@@ -118,6 +131,22 @@ export type BlogPost = {
   publishedAt: Date;
   updatedAt: Date | null;
   featured: boolean;
+};
+
+export type Partner = {
+  id: string;
+  /** Organisation name as it should be shown, e.g. "Google Developer Groups". */
+  name: string;
+  /** Optional short form shown next to the name, e.g. "GDG". */
+  short: string | null;
+  /** One line on what you did together, e.g. "Co-hosted DevFest Lahore 2025". Hidden when null. */
+  detail: string | null;
+  /** Year of the collaboration, e.g. 2025. Hidden when null. */
+  year: number | null;
+  /** Official page or the event page for the collaboration. */
+  url: string | null;
+  /** Optional monochrome logo under /public (SVG preferred). The name is shown as a wordmark when null. */
+  logo: string | null;
 };
 
 export type Testimonial = {

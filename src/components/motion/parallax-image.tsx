@@ -2,8 +2,12 @@
 
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import Image from "next/image";
-import { useRef } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
+
+const noop = () => () => {};
+/** False during server render and hydration, true afterwards. Keeps the first client render identical to the HTML. */
+const useHydrated = () => useSyncExternalStore(noop, () => true, () => false);
 
 type Props = {
   src: string;
@@ -24,6 +28,8 @@ type Props = {
 export function ParallaxImage({ src, alt, sizes, priority, className, strength = 10 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  // The server cannot know the visitor's motion setting, so apply it only after hydration.
+  const still = useHydrated() && reduce;
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], [`-${strength}%`, `${strength}%`]);
   // The inner layer overhangs the frame by more than it travels, so edges stay hidden.
@@ -31,7 +37,7 @@ export function ParallaxImage({ src, alt, sizes, priority, className, strength =
 
   return (
     <div ref={ref} className="absolute inset-0 overflow-hidden">
-      <motion.div className="absolute inset-x-0" style={{ top: `-${overhang}`, bottom: `-${overhang}`, y: reduce ? 0 : y }}>
+      <motion.div className="absolute inset-x-0" style={{ top: `-${overhang}`, bottom: `-${overhang}`, y: still ? 0 : y }}>
         <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className={cn("object-cover", className)} />
       </motion.div>
     </div>

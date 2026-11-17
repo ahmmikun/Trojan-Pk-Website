@@ -7,10 +7,12 @@ import { projectsData } from "@/data/projects";
 import { statsData } from "@/data/stats";
 import { teamData } from "@/data/team";
 import { testimonialsData } from "@/data/testimonials";
+import { partnersData } from "@/data/partners";
 import { socialLinks as socialLinksData } from "@/config/social-links";
 import {
   achievementSchema,
   eventSchema,
+  partnerSchema,
   projectSchema,
   socialLinkSchema,
   statSchema,
@@ -56,6 +58,7 @@ export const allTeam = parseList("src/data/team.ts", teamMemberSchema, teamData,
 export const allTestimonials = parseList("src/data/testimonials.ts", testimonialSchema, testimonialsData, (t) => t.id) as typeof testimonialsData;
 export const allAchievements = parseList("src/data/achievements.ts", achievementSchema, achievementsData, (a) => a.slug) as typeof achievementsData;
 export const allStats = parseList("src/data/stats.ts", statSchema, statsData, (s) => s.key) as typeof statsData;
+export const allPartners = parseList("src/data/partners.ts", partnerSchema, partnersData, (p) => p.id) as typeof partnersData;
 export const allSocialLinks = parseList("src/config/social-links.ts", socialLinkSchema, socialLinksData, (l) => l.id) as typeof socialLinksData;
 
 // Cross-reference checks: fail the build if content points at something that does not exist.

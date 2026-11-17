@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/common/json-ld";
 import { siteConfig } from "@/config/site";
+import { getSiteSettings } from "@/content/site-content";
 import { AchievementSection } from "@/features/achievement/achievement-section";
 import { Hero } from "@/features/home/hero";
 import {
@@ -13,14 +14,19 @@ import {
   Testimonials,
   WhatWeDo,
 } from "@/features/home/sections";
-import { getFeaturedAchievement } from "@/content/site-content";
+import { getFeaturedAchievement, getPartners } from "@/content/site-content";
+import { PartnersSection } from "@/features/partners/partners-section";
 import { getSocialLinks } from "@/content/social";
 
-export const metadata: Metadata = {
-  title: { absolute: `${siteConfig.name} | Developer & Open-Source Community in Pakistan` },
-  description: siteConfig.description,
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { description, defaultOgImage } = await getSiteSettings();
+  return {
+    title: { absolute: `${siteConfig.name} | Developer & Open-Source Community in Pakistan` },
+    description,
+    alternates: { canonical: "/" },
+    ...(defaultOgImage ? { openGraph: { images: [defaultOgImage] }, twitter: { images: [defaultOgImage] } } : {}),
+  };
+}
 
 /**
  * Section order follows the visitor's questions, alternating text-led and
@@ -28,6 +34,7 @@ export const metadata: Metadata = {
  *   1. Hero            hook: who this is for                     (type)
  *   2. What we do      reward: what you would actually do here   (imagery, interactive)
  *   3. Introduction    why us: what makes the community different (calm text)
+ *   3b. Collaborations proof by association: who we have worked with (marquee)
  *   4. Achievement     proof: we ship and compete                (feature)
  *   5. Impact          proof in numbers, only when real stats exist
  *   6. Projects        more work, minus the one already featured above
@@ -37,7 +44,7 @@ export const metadata: Metadata = {
  *  10. Final CTA       the ask, once trust is built
  */
 export default async function HomePage() {
-  const [achievement, social] = await Promise.all([getFeaturedAchievement(), getSocialLinks()]);
+  const [achievement, social, partners] = await Promise.all([getFeaturedAchievement(), getSocialLinks(), getPartners()]);
 
   return (
     <>
@@ -55,6 +62,7 @@ export default async function HomePage() {
       <Hero />
       <WhatWeDo />
       <Introduction />
+      <PartnersSection partners={partners} />
       {achievement ? <AchievementSection achievement={achievement} /> : null}
       <CommunityImpact />
       <FeaturedProjects excludeSlug={achievement?.projectSlug ?? null} />

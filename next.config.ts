@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
 
+/** Supabase project origin (database API + image storage), when configured. */
+const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : null;
+
 /**
  * Security headers applied to every response. The CSP allows 'unsafe-inline'
  * for scripts and styles because Next.js inlines hydration data. 'unsafe-eval'
@@ -18,7 +21,7 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
   {
     key: "Content-Security-Policy",
-    value: `default-src 'self'; script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'${isDev ? " ws:" : ""}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'${isDev ? "" : "; upgrade-insecure-requests"}`,
+    value: `default-src 'self'; script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}${isDev ? " ws:" : ""}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'${isDev ? "" : "; upgrade-insecure-requests"}`,
   },
 ];
 
@@ -33,9 +36,11 @@ const nextConfig: NextConfig = {
     qualities: [75],
     // Optimized images are immutable per URL, so cache them for a year at the edge/browser.
     minimumCacheTTL: 60 * 60 * 24 * 365,
-    // Only optimize files that live in /public. Add `remotePatterns` here when
-    // images start coming from a CDN or storage bucket.
+    // Files in /public, plus uploads in the Supabase Storage "media" bucket.
     localPatterns: [{ pathname: "/**" }],
+    remotePatterns: supabaseOrigin
+      ? [{ protocol: "https", hostname: new URL(supabaseOrigin).hostname, pathname: "/storage/v1/object/public/media/**" }]
+      : [],
   },
 
   async headers() {

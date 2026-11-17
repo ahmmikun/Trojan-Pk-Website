@@ -77,6 +77,16 @@ export const teamMemberSchema = z.object({
   order: z.number().int(),
 });
 
+export const partnerSchema = z.object({
+  id: slug,
+  name: z.string().min(1),
+  short: z.string().min(1).nullable(),
+  detail: z.string().min(1).nullable(),
+  year: z.number().int().min(2000).max(2100).nullable(),
+  url: optionalUrl,
+  logo: imagePath,
+});
+
 export const testimonialSchema = z.object({
   id: z.string().min(1),
   quote: z.string().min(1),

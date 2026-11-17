@@ -14,6 +14,7 @@ import { getTeamMemberBySlug } from "@/content/team";
 import { PostCard, blogCategoryName } from "@/features/blog/post-card";
 import { ShareLinks } from "@/features/blog/share-links";
 import { formatDate, initials, readingTime } from "@/lib/format";
+import { absoluteUrl, detailMetadata } from "@/lib/seo";
 
 // Known slugs are prerendered at build time. Others render on demand; notFound() handles unknown ones.
 export const revalidate = 3600;
@@ -29,20 +30,15 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): P
     return {};
   }
   return {
-    title: post.title,
-    description: post.excerpt,
-    authors: [{ name: post.authorName }],
-    alternates: { canonical: `/blog/${post.slug}` },
-    openGraph: {
-      type: "article",
+    ...detailMetadata({
+      path: `/blog/${post.slug}`,
       title: post.title,
       description: post.excerpt,
-      url: `/blog/${post.slug}`,
-      publishedTime: post.publishedAt.toISOString(),
-      authors: [post.authorName],
-      images: post.coverImage ? [post.coverImage] : undefined,
-    },
-    twitter: { card: "summary_large_image", title: post.title, description: post.excerpt },
+      image: post.coverImage,
+      seo: post.seo,
+      openGraph: { type: "article", publishedTime: post.publishedAt.toISOString(), ...(post.updatedAt ? { modifiedTime: post.updatedAt.toISOString() } : {}), authors: [post.authorName] },
+    }),
+    authors: [{ name: post.authorName }],
   };
 }
 
@@ -73,7 +69,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
           author: { "@type": "Person", name: post.authorName },
           publisher: { "@type": "Organization", name: siteConfig.name },
           mainEntityOfPage: url,
-          ...(post.coverImage ? { image: `${siteConfig.url}${post.coverImage}` } : {}),
+          ...(post.coverImage ? { image: absoluteUrl(siteConfig.url, post.coverImage) } : {}),
         }}
       />
       <DetailHeader

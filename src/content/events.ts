@@ -1,13 +1,15 @@
 import type { CommunityEvent } from "@/types/content";
 import { allEvents } from "./validated";
 import { isVisible } from "./visibility";
+import { dbEvents } from "./db";
 
 const time = (e: CommunityEvent) => e.startsAt?.getTime() ?? 0;
 
-const visibleEvents = () => allEvents.filter((e) => isVisible(e.published));
+/** Events from Supabase when configured, otherwise from src/data. */
+const visibleEvents = async () => (await dbEvents()) ?? allEvents.filter((e) => isVisible(e.published));
 
 export async function getEvents(): Promise<{ upcoming: CommunityEvent[]; past: CommunityEvent[] }> {
-  const all = visibleEvents();
+  const all = await visibleEvents();
   // The site is built once and served statically, so "upcoming" vs "past" is an
   // explicit status in src/data/events.ts, not a comparison against today's date.
   // Update an event's status to COMPLETED after it happens.
@@ -17,7 +19,7 @@ export async function getEvents(): Promise<{ upcoming: CommunityEvent[]; past: C
 }
 
 export async function getEventBySlug(slug: string): Promise<CommunityEvent | null> {
-  return visibleEvents().find((e) => e.slug === slug) ?? null;
+  return (await visibleEvents()).find((e) => e.slug === slug) ?? null;
 }
 
 export async function getEventsPreview(): Promise<{ upcoming: CommunityEvent[]; past: CommunityEvent[] }> {

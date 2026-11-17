@@ -12,6 +12,7 @@ import { siteConfig } from "@/config/site";
 import { EventStatusChip, eventToMedia, eventTypeLabel } from "@/features/events/event-card";
 import { eventDateLabel } from "@/lib/format";
 import { getEventBySlug, getEvents } from "@/content/events";
+import { absoluteUrl, detailMetadata } from "@/lib/seo";
 
 // Known slugs are prerendered at build time. Others render on demand; notFound() handles unknown ones.
 export const revalidate = 3600;
@@ -24,12 +25,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/events/[slug]">): Promise<Metadata> {
   const event = await getEventBySlug((await params).slug);
   if (!event) return {};
-  return {
-    title: event.title,
-    description: event.summary,
-    alternates: { canonical: `/events/${event.slug}` },
-    openGraph: { title: event.title, description: event.summary, type: "article", url: `/events/${event.slug}`, images: event.image ? [event.image] : undefined },
-  };
+  return detailMetadata({ path: `/events/${event.slug}`, title: event.title, description: event.summary, image: event.image, seo: event.seo, isSample: event.isSample });
 }
 
 export default async function EventPage({ params }: PageProps<"/events/[slug]">) {
@@ -61,8 +57,10 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
           ...(event.startsAt ? { startDate: event.startsAt.toISOString() } : {}),
           ...(event.endsAt ? { endDate: event.endsAt.toISOString() } : {}),
           eventStatus: event.status === "CANCELLED" ? "https://schema.org/EventCancelled" : "https://schema.org/EventScheduled",
-          ...(event.location ? { location: { "@type": "Place", name: event.location } } : {}),
-          ...(event.organizer ? { organizer: { "@type": "Organization", name: event.organizer } } : {}),
+          eventAttendanceMode: event.location?.toLowerCase() === "online" ? "https://schema.org/OnlineEventAttendanceMode" : "https://schema.org/OfflineEventAttendanceMode",
+          ...(event.image ? { image: [absoluteUrl(siteConfig.url, event.image)] } : {}),
+          ...(event.location ? { location: event.location.toLowerCase() === "online" ? { "@type": "VirtualLocation", url: `${siteConfig.url}/events/${event.slug}` } : { "@type": "Place", name: event.location, address: event.location } } : {}),
+          organizer: { "@type": "Organization", name: event.organizer ?? siteConfig.name, url: siteConfig.url },
         }}
       />
       <DetailHeader

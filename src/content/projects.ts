@@ -1,14 +1,15 @@
 import { PROJECT_CATEGORIES, type Project } from "@/types/content";
 import { allProjects } from "./validated";
 import { isVisible } from "./visibility";
+import { dbProjects } from "./db";
 
-/** Project read API. Data comes from src/data/projects.ts, validated at build time. */
+/** Project read API. Data comes from Supabase when configured, otherwise src/data/projects.ts. */
 function byNewest(a: Project, b: Project) {
   return (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0) || a.title.localeCompare(b.title);
 }
 
 export async function getProjects(): Promise<Project[]> {
-  return allProjects.filter((p) => isVisible(p.published)).sort(byNewest);
+  return ((await dbProjects()) ?? allProjects.filter((p) => isVisible(p.published))).sort(byNewest);
 }
 
 export async function getFeaturedProjects(limit = 3): Promise<Project[]> {

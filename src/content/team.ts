@@ -1,10 +1,12 @@
 import type { TeamMember } from "@/types/content";
 import { allTeam } from "./validated";
+import { dbTeam } from "./db";
 
+/** Team from Supabase when configured, otherwise src/data/team.ts. */
 export async function getTeam(): Promise<TeamMember[]> {
-  return [...allTeam].sort((a, b) => a.order - b.order);
+  return [...((await dbTeam()) ?? allTeam)].sort((a, b) => a.order - b.order);
 }
 
 export async function getTeamMemberBySlug(slug: string): Promise<TeamMember | null> {
-  return allTeam.find((m) => m.slug === slug) ?? null;
+  return (await getTeam()).find((m) => m.slug === slug) ?? null;
 }

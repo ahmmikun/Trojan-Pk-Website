@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { siteConfig } from "@/config/site";
 import { MotionProvider } from "@/components/motion/motion";
-import { IntroCurtain } from "@/components/motion/intro-curtain";
-import { SmoothScroll } from "@/components/motion/smooth-scroll";
 import { INTRO_KEY } from "@/lib/intro";
 import { THEME_KEY } from "@/lib/theme";
 import "./globals.css";
@@ -30,7 +28,13 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     images: [siteConfig.ogImage],
   },
-  icons: { icon: "/brand/mark.png", apple: "/brand/mark.png" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -38,8 +42,11 @@ export const viewport: Viewport = {
   colorScheme: "dark light",
 };
 
-/** Applies a saved light-theme choice before first paint so there is no flash. Dark is the default. */
-const themeScript = `try{if(localStorage.getItem("${THEME_KEY}")==="light"){var d=document.documentElement;d.classList.remove("dark");d.style.colorScheme="light";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#fafaf8")}}catch(e){}`;
+/**
+ * Applies the theme before first paint so there is no flash. The public site is dark by default
+ * (a saved "light" choice wins); /admin is always light.
+ */
+const themeScript = `try{var d=document.documentElement;if(location.pathname.indexOf("/admin")===0||localStorage.getItem("${THEME_KEY}")==="light"){d.classList.remove("dark");d.style.colorScheme="light";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#fafaf8")}}catch(e){}`;
 
 /** Hides the opening curtain before first paint when it already played this session or motion is reduced. */
 const introScript = `try{if(sessionStorage.getItem("${INTRO_KEY}")||matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("intro-skip")}catch(e){document.documentElement.classList.add("intro-skip")}`;
@@ -55,8 +62,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <noscript>
           <style>{`[data-fm]{opacity:1!important;transform:none!important}[data-intro]{display:none!important}`}</style>
         </noscript>
-        <IntroCurtain />
-        <SmoothScroll />
         <MotionProvider>{children}</MotionProvider>
       </body>
     </html>

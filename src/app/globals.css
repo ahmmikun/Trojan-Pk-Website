@@ -267,3 +267,19 @@
 [data-media-hover="on"] * {
   cursor: none;
 }
+
+/* Admin workspace (always light): white surfaces on a soft canvas, crisper borders than the public site. */
+.admin-scope {
+  --background: #ffffff;
+  --canvas: #f7f7f5;
+  --card: #ffffff;
+  --surface: #f7f7f5;
+  --muted: #f1f1ee;
+  --muted-foreground: #6b6b73;
+  --border: rgb(15 15 16 / 0.09);
+  --input: rgb(15 15 16 / 0.14);
+  --ring: #2f6feb;
+  --sidebar: #f7f7f5;
+  --success: #12804a;
+  font-size: 0.875rem;
+}

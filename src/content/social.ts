@@ -1,14 +1,16 @@
 import { resolveSocialLinks } from "@/lib/social";
 import type { ResolvedSocialLink, SocialPlatform } from "@/types/social";
 import { allSocialLinks } from "./validated";
+import { dbSocialLinks } from "./db";
 
 /**
- * Single read path for every social/community link on the site. All links are
- * defined once in src/config/social-links.ts, so editing a URL there updates
- * the navbar, hero, footer, community and join pages together.
+ * Single read path for every social/community link on the site. Links are edited in
+ * /admin/settings (Supabase); src/config/social-links.ts is the fallback when the
+ * database is not configured. Either way they update the navbar, hero, footer,
+ * community and join pages together.
  */
 export async function getSocialLinks(): Promise<ResolvedSocialLink[]> {
-  return resolveSocialLinks(allSocialLinks);
+  return resolveSocialLinks((await dbSocialLinks()) ?? allSocialLinks);
 }
 
 /** Community invitation links (WhatsApp / Discord / Telegram, ...). */
