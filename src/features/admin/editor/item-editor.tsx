@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs } from "@base-ui/react/tabs";
-import { ChevronLeft, Copy, ExternalLink, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
+import { ChevronLeft, Copy, ExternalLink, FileDown, FileUp, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState, useTransition } from "react";
@@ -11,6 +11,7 @@ import { ConfirmDialog, DropdownMenu, MenuItem, MenuLink, MenuSeparator } from "
 import { toast } from "@/components/admin-ui/toast";
 import { cn } from "@/lib/utils";
 import { deleteItem, duplicateItem, saveItem, type SaveState } from "../actions";
+import { parseMarkdownFile } from "../markdown-import";
 import { allFields, getResource, SEO_FIELDS, type Field } from "../resources";
 import { FormField } from "./form-field";
 import { SeoPreview } from "./seo-preview";
@@ -46,6 +47,12 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
   const [slug, setSlug] = useState(String(values[slugField?.name ?? ""] ?? ""));
   const [slugTouched, setSlugTouched] = useState(!isNew);
   const [title, setTitle] = useState(String(values[resource.titleField] ?? ""));
+
+  // Field defaults. Replaced by "Import .md", which also remounts the fields (formKey) so they pick up the new values.
+  const [vals, setVals] = useState(values);
+  const [formKey, setFormKey] = useState(0);
+  const [importing, setImporting] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
 
   // Dirty tracking without clocks: count edits, remember the count at submit, and mark it saved when the result arrives.
   const [edits, setEdits] = useState(0);
@@ -93,6 +100,71 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
     return () => window.removeEventListener("keydown", onKey);
   }, [form]);
 
+  async function importMarkdown(file: File | undefined) {
+    if (importRef.current) importRef.current.value = "";
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      toast.error("File too large", "Markdown files up to 1 MB can be imported.");
+      return;
+    }
+    setImporting(true);
+    try {
+      const result = await parseMarkdownFile(file.name, await file.text());
+      if (!result.ok) {
+        toast.error("Could not import", result.error);
+        return;
+      }
+      const next = result.values;
+      setVals((v) => ({ ...v, ...next }));
+      if (typeof next.title === "string") setTitle(next.title);
+      // New posts take the file's slug; an existing post keeps its URL (changing it would break links).
+      if (isNew && typeof next.slug === "string") setSlug(next.slug);
+      setFormKey((k) => k + 1);
+      markDirty();
+      toast.success(`Imported ${file.name}`, result.notes.length ? result.notes.join(" ") : "Review the fields, then save.");
+    } catch (e) {
+      toast.error("Could not import", (e as Error).message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  /** Current form as a .md file with front matter (same format as content/blog). */
+  function exportMarkdown() {
+    if (!form) return;
+    const d = new FormData(form);
+    const s = (k: string) => String(d.get(k) ?? "").trim();
+    const q = (v: string) => JSON.stringify(v);
+    const date = (v: string) => (v ? v.slice(0, 10) : "");
+    const tags = s("tags").split(",").map((t) => t.trim()).filter(Boolean);
+    const lines = [
+      "---",
+      `title: ${q(s("title"))}`,
+      `excerpt: ${q(s("excerpt"))}`,
+      `category: ${s("category_slug")}`,
+      `tags: [${tags.map(q).join(", ")}]`,
+      `author: ${q(s("author_name"))}`,
+      s("author_slug") ? `authorSlug: ${q(s("author_slug"))}` : null,
+      s("published_at") ? `date: ${date(s("published_at"))}` : null,
+      s("content_updated_at") ? `updated: ${date(s("content_updated_at"))}` : null,
+      s("cover_image") ? `cover: ${q(s("cover_image"))}` : null,
+      `featured: ${d.get("featured") === "on"}`,
+      `draft: ${d.get("published") !== "on"}`,
+      s("seo_title") ? `seoTitle: ${q(s("seo_title"))}` : null,
+      s("seo_description") ? `seoDescription: ${q(s("seo_description"))}` : null,
+      "---",
+      "",
+      s("content"),
+      "",
+    ].filter((l) => l !== null);
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${s("slug") || "post"}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
   const labelOf = (name: string) => {
     const [base, row] = name.split(".");
     const f = allFields(resource).find((x) => x.name === base);
@@ -103,7 +175,7 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
     <FormField
       key={f.name}
       field={f}
-      value={values[f.name]}
+      value={vals[f.name]}
       error={errors[f.name]}
       errors={errors}
       folder={resource.key}
@@ -163,7 +235,16 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
             <span className={cn("size-1.5 rounded-full", pending ? "animate-pulse bg-blue-500" : dirty ? "bg-amber-500" : isNew ? "bg-zinc-400" : "bg-emerald-500")} aria-hidden="true" />
             {pending ? "Saving…" : dirty ? "Unsaved changes" : state.status === "saved" ? "Saved just now" : isNew ? "Not saved yet" : `Saved ${relativeTime(values.updated_at).replace(/^Just/, "just")}`}
           </span>
-          {!isNew ? (
+          {resource.markdownFile ? (
+            <>
+              <Button size="md" onClick={() => importRef.current?.click()} disabled={importing} title="Fill this form from a Markdown file with front matter">
+                {importing ? <Loader2 className="animate-spin" aria-hidden="true" /> : <FileUp aria-hidden="true" />}
+                <span className="hidden md:inline">Import .md</span>
+              </Button>
+              <input ref={importRef} type="file" accept=".md,.markdown,text/markdown,text/plain" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={(e) => void importMarkdown(e.target.files?.[0])} />
+            </>
+          ) : null}
+          {!isNew || resource.markdownFile ? (
             <DropdownMenu label="More actions" trigger={<MoreHorizontal aria-hidden="true" />}>
               {publicHref ? (
                 <MenuLink href={publicHref} external>
@@ -171,7 +252,13 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
                   View on site
                 </MenuLink>
               ) : null}
-              {resource.idKind === "uuid" ? (
+              {resource.markdownFile ? (
+                <MenuItem onClick={exportMarkdown}>
+                  <FileDown aria-hidden="true" />
+                  Download as .md
+                </MenuItem>
+              ) : null}
+              {!isNew && resource.idKind === "uuid" ? (
                 <MenuItem
                   onClick={() =>
                     startTransition(async () => {
@@ -188,11 +275,15 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
                   Duplicate as draft
                 </MenuItem>
               ) : null}
-              <MenuSeparator />
-              <MenuItem danger onClick={() => setConfirmDelete(true)}>
-                <Trash2 aria-hidden="true" />
-                Delete
-              </MenuItem>
+              {!isNew ? (
+                <>
+                  <MenuSeparator />
+                  <MenuItem danger onClick={() => setConfirmDelete(true)}>
+                    <Trash2 aria-hidden="true" />
+                    Delete
+                  </MenuItem>
+                </>
+              ) : null}
             </DropdownMenu>
           ) : null}
           <Button type="submit" variant="primary" disabled={pending} className="min-w-20">
@@ -220,7 +311,7 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
         </div>
       ) : null}
 
-      <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div key={formKey} className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <Tabs.Root value={tab} onValueChange={(v) => setTab(String(v))} className="min-w-0">
           {resource.seo ? (
             <Tabs.List className="relative mb-5 inline-flex gap-0.5 rounded-lg bg-zinc-200/60 p-0.5 text-[0.8125rem]">

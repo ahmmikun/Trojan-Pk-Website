@@ -72,7 +72,7 @@ export function FormField({ field, value, error, errors, folder, onChange, slug,
     case "markdown":
       return (
         <Field id={field.name} label={field.label} required={field.required} description={field.description} error={error}>
-          <MarkdownEditor id={field.name} name={field.name} defaultValue={String(value ?? "")} required={field.required} invalid={Boolean(error)} describedBy={error || field.description ? `${field.name}-hint` : undefined} onChange={onChange} />
+          <MarkdownEditor id={field.name} name={field.name} defaultValue={String(value ?? "")} required={field.required} invalid={Boolean(error)} describedBy={error || field.description ? `${field.name}-hint` : undefined} onChange={onChange} folder={folder} />
         </Field>
       );
     case "select":

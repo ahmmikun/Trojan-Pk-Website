@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/common/empty-state";
 import { FilterGroup, ResultCount, SearchField } from "@/components/common/filter-bar";
@@ -8,39 +9,58 @@ import { BLOG_CATEGORIES, type BlogPost } from "@/types/content";
 import { PostCard } from "./post-card";
 
 const PAGE_SIZE = 9;
+const isCategory = (v: string | null): v is BlogPost["categorySlug"] => BLOG_CATEGORIES.some((c) => c.slug === v);
 
-export function BlogExplorer({ posts }: { posts: BlogPost[] }) {
+/**
+ * Search and topic filter for the blog grid. The topic lives in the URL (?category=…), so
+ * filtered views can be shared and the article breadcrumb can link straight to its topic.
+ */
+export function BlogExplorer({ posts, allPosts = posts }: { posts: BlogPost[]; allPosts?: BlogPost[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const initial = params.get("category");
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategoryState] = useState<string | null>(isCategory(initial) ? initial : null);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
+  // With a topic or search active, include the featured post too, so nothing is hidden from results.
+  const source = category || query.trim() ? allPosts : posts;
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return posts.filter((p) => {
+    return source.filter((p) => {
       if (category && p.categorySlug !== category) return false;
       if (!q) return true;
       return [p.title, p.excerpt, p.authorName, ...p.tags].some((s) => s.toLowerCase().includes(q));
     });
-  }, [posts, query, category]);
+  }, [source, query, category]);
 
-  const update = <T,>(set: (v: T) => void) => (v: T) => {
-    set(v);
+  const setCategory = (v: string | null) => {
+    setCategoryState(v);
     setVisible(PAGE_SIZE);
+    const next = new URLSearchParams(params.toString());
+    if (v) next.set("category", v);
+    else next.delete("category");
+    const s = next.toString();
+    router.replace(`${pathname}${s ? `?${s}` : ""}`, { scroll: false });
   };
 
   return (
     <div>
       <div className="flex flex-col gap-6 border-b border-border pb-8">
         <div className="flex flex-wrap items-end justify-between gap-6">
-          <SearchField value={query} onChange={update(setQuery)} label="Search articles" placeholder="Search articles, authors or tags" />
-          <ResultCount count={filtered.length} noun="article" />
+          <h2 className="text-2xl font-medium tracking-tight">{category ? BLOG_CATEGORIES.find((c) => c.slug === category)?.name : "All articles"}</h2>
+          <div className="flex flex-wrap items-end gap-6">
+            <SearchField value={query} onChange={(v: string) => (setQuery(v), setVisible(PAGE_SIZE))} label="Search articles" placeholder="Search articles, authors or tags" />
+            <ResultCount count={filtered.length} noun="article" />
+          </div>
         </div>
         <FilterGroup
-          label="Filter by category"
+          label="Filter by topic"
           value={category}
-          onChange={update(setCategory)}
+          onChange={setCategory}
           allLabel="All topics"
-          options={BLOG_CATEGORIES.map((c) => ({ value: c.slug, label: c.name, count: posts.filter((p) => p.categorySlug === c.slug).length }))}
+          options={BLOG_CATEGORIES.map((c) => ({ value: c.slug, label: c.name, count: allPosts.filter((p) => p.categorySlug === c.slug).length }))}
         />
       </div>
 
@@ -53,8 +73,8 @@ export function BlogExplorer({ posts }: { posts: BlogPost[] }) {
       ) : (
         <EmptyState
           className="mt-12"
-          title={posts.length === 0 ? "No articles published yet" : "No articles match your filters"}
-          description={posts.length === 0 ? "Tutorials, hackathon stories and community announcements will be published here." : "Try a different search term or topic."}
+          title={allPosts.length === 0 ? "No articles published yet" : posts.length === 0 && !category && !query ? "More articles soon" : "No articles match your filters"}
+          description={allPosts.length === 0 ? "Tutorials, hackathon stories and community announcements will be published here." : posts.length === 0 && !category && !query ? "The latest article is featured above." : "Try a different search term or topic."}
         />
       )}
 

@@ -65,6 +65,8 @@ export type Resource = {
   publicPath?: (row: Row) => string | null;
   /** Manual order (sort_order) is the primary sort. */
   ordered?: boolean;
+  /** Blog posts: import a .md file (front matter + body) into the form, and download as .md. */
+  markdownFile?: boolean;
   /** Shown in the sidebar group. */
   group: "content" | "community";
 };
@@ -193,7 +195,8 @@ export const RESOURCES: Record<string, Resource> = {
     table: "blog_posts",
     label: "Blog",
     singular: "Post",
-    description: "Articles. Markdown files in content/blog keep working alongside.",
+    markdownFile: true,
+    description: "Articles written in Markdown. Import a .md file or write here; files in content/blog keep working alongside.",
     group: "content",
     idColumn: "id",
     idKind: "uuid",
@@ -213,7 +216,7 @@ export const RESOURCES: Record<string, Resource> = {
       { name: "title", label: "Title", type: "text", required: true, maxLength: 200, place: "basics", prominent: true },
       { name: "excerpt", label: "Excerpt", type: "textarea", required: true, maxLength: 300, place: "basics", description: "Shown in the blog list and link previews." },
       { name: "cover_image", label: "Cover image", type: "image", place: "media" },
-      { name: "content", label: "Article", type: "markdown", required: true, place: "content" },
+      { name: "content", label: "Article", type: "markdown", required: true, place: "content", description: "Markdown: headings, lists, tables, code, callouts (> [!TIP]) and footnotes. Paste or drop images to upload them. ## headings build the “On this page” outline." },
       { name: "category_slug", label: "Category", type: "select", required: true, options: opts(BLOG_CATEGORIES), half: true, place: "details" },
       { name: "tags", label: "Tags", type: "tags", half: true, place: "details" },
       { name: "author_name", label: "Author", type: "text", required: true, half: true, place: "details" },
