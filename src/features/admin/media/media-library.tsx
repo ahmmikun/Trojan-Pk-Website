@@ -50,7 +50,7 @@ function BulkUploader({ onDone }: { onDone: () => void }) {
         disabled={running}
         className={cn(
           "flex items-center justify-center gap-3 rounded-lg border border-dashed px-5 py-5 text-[0.8125rem] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-          dragging ? "border-foreground/40 bg-muted" : "border-input bg-background hover:border-foreground/25 hover:bg-muted/40",
+          dragging ? "border-blue-500 bg-blue-50" : "border-zinc-300 bg-white shadow-[var(--shadow-card)] hover:border-zinc-400 hover:bg-zinc-50",
         )}
       >
         <UploadCloud className="size-4 text-muted-foreground" aria-hidden="true" />
@@ -237,8 +237,8 @@ export function MediaLibrary({ assets }: { assets: MediaAsset[] }) {
           {shown.map((a) => (
             <li key={a.id}>
               <button type="button" onClick={() => setOpen(a)} className="group block w-full text-left outline-none">
-                <span className="block overflow-hidden rounded-lg ring-1 ring-border transition-shadow group-hover:ring-foreground/25 group-focus-visible:ring-2 group-focus-visible:ring-ring">
-                  <MediaThumb src={a.url} className="aspect-[4/3] w-full transition-transform duration-300 group-hover:scale-[1.02]" />
+                <span className="block overflow-hidden rounded-xl bg-white p-1 shadow-[var(--shadow-card)] ring-1 ring-zinc-200 transition-shadow group-hover:shadow-[var(--shadow-pop)] group-hover:ring-zinc-300 group-focus-visible:ring-2 group-focus-visible:ring-ring">
+                  <MediaThumb src={a.url} className="aspect-[4/3] w-full rounded-lg transition-transform duration-300 group-hover:scale-[1.02]" />
                 </span>
                 <span className="mt-1.5 block truncate text-xs">{a.alt.trim() || <span className="text-amber-700">No alt text</span>}</span>
                 <span className="block text-[0.6875rem] text-muted-foreground tabular-nums">

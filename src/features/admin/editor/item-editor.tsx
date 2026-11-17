@@ -147,20 +147,20 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
       className="flex min-w-0 flex-col gap-6"
     >
       {/* Sticky document header */}
-      <div className="sticky top-12 z-20 -mx-4 -mt-6 border-b border-border bg-[var(--canvas)]/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:top-0 lg:-mx-8 lg:-mt-8 lg:px-8">
+      <div className="sticky top-16 z-20 -mx-4 -mt-6 border-b border-zinc-200 bg-[var(--canvas)]/90 px-4 py-3.5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:-mt-8 lg:px-8">
         <div className="flex items-center gap-3">
-          <Link href={listHref} className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground shadow-xs hover:text-foreground" aria-label={`Back to ${resource.label}`}>
+          <Link href={listHref} className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-white text-zinc-600 shadow-[0_1px_2px_rgb(16_24_40/0.06)] ring-1 ring-zinc-300 ring-inset hover:bg-zinc-50 hover:text-zinc-950" aria-label={`Back to ${resource.label}`}>
             <ChevronLeft className="size-4" aria-hidden="true" />
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="text-[0.6875rem] text-muted-foreground">
-              <Link href={listHref} className="hover:text-foreground">{resource.label}</Link>
-              <span aria-hidden="true"> / </span>
-              {isNew ? "New" : "Edit"}
-            </p>
-            <h1 className="truncate text-[0.9375rem] font-medium">{displayTitle}</h1>
+            <p className="text-xs text-zinc-500">{isNew ? `New ${resource.singular.toLowerCase()}` : `Editing ${resource.singular.toLowerCase()}`}</p>
+            <h1 className="truncate text-lg leading-tight font-[650] tracking-[-0.015em] text-zinc-950">{displayTitle}</h1>
           </div>
-          <span className="hidden text-xs text-muted-foreground sm:block" aria-live="polite">
+          <span
+            aria-live="polite"
+            className={cn("hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-[550] ring-1 ring-inset sm:inline-flex", dirty ? "bg-amber-50 text-amber-800 ring-amber-600/25" : "bg-white text-zinc-600 ring-zinc-200")}
+          >
+            <span className={cn("size-1.5 rounded-full", pending ? "animate-pulse bg-blue-500" : dirty ? "bg-amber-500" : isNew ? "bg-zinc-400" : "bg-emerald-500")} aria-hidden="true" />
             {pending ? "Saving…" : dirty ? "Unsaved changes" : state.status === "saved" ? "Saved just now" : isNew ? "Not saved yet" : `Saved ${relativeTime(values.updated_at).replace(/^Just/, "just")}`}
           </span>
           {!isNew ? (
@@ -204,13 +204,13 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
 
       {/* Error summary */}
       {state.status === "error" ? (
-        <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-lg border border-[#d92d20]/25 bg-[#d92d20]/[0.05] px-4 py-3 text-[0.8125rem] outline-none">
-          <p className="font-medium text-[#b42318]">{state.message}</p>
+        <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[0.8125rem] shadow-[var(--shadow-card)] outline-none">
+          <p className="font-[600] text-red-800">{state.message}</p>
           {errorEntries.length ? (
             <ul className="mt-1.5 flex flex-col gap-0.5">
               {errorEntries.map(([name, message]) => (
                 <li key={name}>
-                  <a href={`#${name.split(".")[0]}`} onClick={() => setTab(SEO_FIELDS.some((f) => f.name === name) ? "seo" : "content")} className="text-[#b42318] underline-offset-2 hover:underline">
+                  <a href={`#${name.split(".")[0]}`} onClick={() => setTab(SEO_FIELDS.some((f) => f.name === name) ? "seo" : "content")} className="text-red-700 underline-offset-2 hover:underline">
                     {labelOf(name)}: {message}
                   </a>
                 </li>
@@ -220,50 +220,55 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
         </div>
       ) : null}
 
-      <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_19rem]">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <Tabs.Root value={tab} onValueChange={(v) => setTab(String(v))} className="min-w-0">
           {resource.seo ? (
-            <Tabs.List className="relative mb-4 flex gap-4 border-b border-border text-[0.8125rem]">
+            <Tabs.List className="relative mb-5 inline-flex gap-0.5 rounded-lg bg-zinc-200/60 p-0.5 text-[0.8125rem]">
               {[
                 { id: "content", label: "Content" },
                 { id: "seo", label: "SEO & sharing" },
               ].map((t) => (
-                <Tabs.Tab key={t.id} value={t.id} className="relative -mb-px h-9 border-b-2 border-transparent px-0.5 text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:text-foreground data-active:border-foreground data-active:font-medium data-active:text-foreground">
+                <Tabs.Tab
+                  key={t.id}
+                  value={t.id}
+                  className="relative h-8 rounded-md px-3.5 font-[500] text-zinc-600 outline-none transition-all hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-ring data-active:bg-white data-active:font-[600] data-active:text-zinc-950 data-active:shadow-[0_1px_2px_rgb(16_24_40/0.08)] data-active:ring-1 data-active:ring-zinc-900/5"
+                >
                   {t.label}
-                  {Object.keys(errors).some((e) => (t.id === "seo") === SEO_FIELDS.some((f) => f.name === e.split(".")[0])) ? <span className="ml-1.5 inline-block size-1.5 rounded-full bg-[#d92d20] align-middle" aria-label="has errors" /> : null}
+                  {Object.keys(errors).some((e) => (t.id === "seo") === SEO_FIELDS.some((f) => f.name === e.split(".")[0])) ? <span className="ml-1.5 inline-block size-1.5 rounded-full bg-red-500 align-middle" aria-label="has errors" /> : null}
                 </Tabs.Tab>
               ))}
             </Tabs.List>
           ) : null}
 
           {/* keepMounted: hidden tabs must still submit their fields */}
-          <Tabs.Panel value="content" keepMounted className="flex flex-col gap-4 data-hidden:hidden">
-            {resource.sections.map((s) => {
-              const fields = resource.fields.filter((f) => f.place === s.id);
-              if (!fields.length) return null;
-              return (
-                <section key={s.id} aria-labelledby={`sec-${s.id}`} className="rounded-xl border border-border bg-card p-4 shadow-xs sm:p-5">
-                  <div className="mb-4">
-                    <h2 id={`sec-${s.id}`} className="text-[0.8125rem] font-medium">{s.title}</h2>
-                    {s.description ? <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p> : null}
+          <Tabs.Panel value="content" keepMounted className="flex flex-col gap-5 data-hidden:hidden">
+            {resource.sections
+              .filter((s) => resource.fields.some((f) => f.place === s.id))
+              .map((s, i) => (
+                <section key={s.id} aria-labelledby={`sec-${s.id}`} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[var(--shadow-card)]">
+                  <div className="flex items-center gap-3 border-b border-zinc-200 bg-zinc-50/70 px-5 py-3">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-md bg-white text-[0.6875rem] font-[650] text-zinc-500 tabular-nums ring-1 ring-zinc-200" aria-hidden="true">{i + 1}</span>
+                    <div className="min-w-0">
+                      <h2 id={`sec-${s.id}`} className="text-[0.875rem] font-[600] text-zinc-900">{s.title}</h2>
+                      {s.description ? <p className="text-xs text-zinc-500">{s.description}</p> : null}
+                    </div>
                   </div>
-                  {grid(fields)}
+                  <div className="p-5">{grid(resource.fields.filter((f) => f.place === s.id))}</div>
                 </section>
-              );
-            })}
+              ))}
           </Tabs.Panel>
 
           {resource.seo ? (
             <Tabs.Panel value="seo" keepMounted className="data-hidden:hidden">
-              <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-                <section className="rounded-xl border border-border bg-card p-4 shadow-xs sm:p-5">
-                  <div className="mb-4">
-                    <h2 className="text-[0.8125rem] font-medium">Search and social</h2>
-                    <p className="mt-0.5 text-xs text-muted-foreground">Optional. Empty fields fall back to the title, summary and cover image.</p>
+              <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+                <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[var(--shadow-card)]">
+                  <div className="border-b border-zinc-200 bg-zinc-50/70 px-5 py-3">
+                    <h2 className="text-[0.875rem] font-[600] text-zinc-900">Search and social</h2>
+                    <p className="text-xs text-zinc-500">Optional. Empty fields fall back to the title, summary and cover image.</p>
                   </div>
-                  <div className="flex flex-col gap-5">{SEO_FIELDS.map(render)}</div>
+                  <div className="flex flex-col gap-5 p-5">{SEO_FIELDS.map(render)}</div>
                 </section>
-                <aside className="rounded-xl border border-border bg-card p-4 shadow-xs sm:p-5">
+                <aside className="rounded-xl border border-zinc-200 bg-white p-5 shadow-[var(--shadow-card)]">
                   <SeoPreview form={form} siteUrl={siteUrl} pathPrefix={slugField?.placeholder ?? "/"} titleField={resource.titleField} summaryField={resource.fields.find((f) => f.name === "summary" || f.name === "excerpt")?.name ?? "summary"} imageField={resource.imageField} />
                 </aside>
               </div>
@@ -272,29 +277,29 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
         </Tabs.Root>
 
         {/* Inspector */}
-        <aside className="flex min-w-0 flex-col gap-4 xl:sticky xl:top-20">
-          <section className="rounded-xl border border-border bg-card shadow-xs">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h2 className="text-[0.8125rem] font-medium">Visibility</h2>
+        <aside className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-[9.5rem]">
+          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[var(--shadow-card)]">
+            <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/70 px-5 py-3">
+              <h2 className="text-[0.875rem] font-[600] text-zinc-900">Visibility</h2>
               {!isNew ? <PublishStatus published={Boolean(values.published)} /> : null}
             </div>
-            <div className="flex flex-col gap-4 p-4">{visibility.map(render)}</div>
+            <div className="flex flex-col divide-y divide-zinc-100 px-5 [&>*]:py-4">{visibility.map(render)}</div>
           </section>
           {other.length ? (
-            <section className="rounded-xl border border-border bg-card shadow-xs">
-              <h2 className="border-b border-border px-4 py-3 text-[0.8125rem] font-medium">Settings</h2>
-              <div className="flex flex-col gap-4 p-4">{other.map(render)}</div>
+            <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[var(--shadow-card)]">
+              <h2 className="border-b border-zinc-200 bg-zinc-50/70 px-5 py-3 text-[0.875rem] font-[600] text-zinc-900">Settings</h2>
+              <div className="flex flex-col gap-5 p-5">{other.map(render)}</div>
             </section>
           ) : null}
           {!isNew ? (
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rounded-xl border border-zinc-200 bg-white px-5 py-4 text-xs text-zinc-500 shadow-[var(--shadow-card)]">
               <dt>Created</dt>
-              <dd className="text-right tabular-nums">{formatDate(values.created_at, { time: true })}</dd>
+              <dd className="text-right font-[500] text-zinc-800 tabular-nums">{formatDate(values.created_at, { time: true })}</dd>
               <dt>Last saved</dt>
-              <dd className="text-right tabular-nums">{formatDate(values.updated_at, { time: true })}</dd>
+              <dd className="text-right font-[500] text-zinc-800 tabular-nums">{formatDate(values.updated_at, { time: true })}</dd>
             </dl>
           ) : null}
-          <p className="hidden px-1 text-xs text-muted-foreground xl:block">
+          <p className="hidden px-1 text-xs text-zinc-500 xl:block">
             <Kbd>Ctrl</Kbd> <Kbd>S</Kbd> to save
           </p>
         </aside>

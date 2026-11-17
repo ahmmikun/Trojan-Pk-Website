@@ -273,18 +273,27 @@
   cursor: none;
 }
 
-/* Admin workspace (always light): white surfaces on a soft canvas, crisper borders than the public site. */
+/* Admin workspace (always light). Solid, visible boundaries: white panels on a cool grey canvas,
+   zinc borders, real elevation. Values are tuned for WCAG AA text contrast on both surfaces. */
 .admin-scope {
   --background: #ffffff;
-  --canvas: #f7f7f5;
+  --foreground: #18181b;
+  --canvas: #f4f4f5;
   --card: #ffffff;
-  --surface: #f7f7f5;
-  --muted: #f1f1ee;
-  --muted-foreground: #6b6b73;
-  --border: rgb(15 15 16 / 0.09);
-  --input: rgb(15 15 16 / 0.14);
-  --ring: #2f6feb;
-  --sidebar: #f7f7f5;
-  --success: #12804a;
+  --surface: #fafafa;
+  --muted: #f4f4f5;
+  --muted-foreground: #5f5f69;
+  --border: #e4e4e7;
+  --input: #d4d4d8;
+  --ring: #2563eb;
+  --sidebar: #ffffff;
+  --success: #15803d;
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --shadow-pop: 0 10px 30px -10px rgb(16 24 40 / 0.18), 0 4px 10px -4px rgb(16 24 40 / 0.08);
   font-size: 0.875rem;
+}
+.admin-scope ::selection {
+  background: rgb(37 99 235 / 0.18);
 }

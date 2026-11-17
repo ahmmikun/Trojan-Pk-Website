@@ -18,7 +18,7 @@ export function useField() {
 }
 
 export const controlClass =
-  "block w-full min-w-0 rounded-md border border-input bg-background px-2.5 text-[0.8125rem] text-foreground shadow-xs outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground/60 hover:border-foreground/25 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/15 aria-invalid:border-[#d92d20] aria-invalid:focus-visible:ring-[#d92d20]/15 read-only:bg-muted/50 read-only:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60";
+  "block w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 text-[0.8125rem] text-zinc-900 shadow-[0_1px_2px_rgb(16_24_40/0.05)] outline-none transition-[border-color,box-shadow] placeholder:text-zinc-400 hover:border-zinc-400 focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/15 aria-invalid:border-red-500 aria-invalid:focus-visible:ring-red-500/15 read-only:bg-zinc-50 read-only:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-60";
 
 type FieldProps = {
   label: React.ReactNode;
@@ -41,7 +41,7 @@ export function Field({ label, description, error, required, aside, id: fixedId,
     <Ctx.Provider value={{ id, describedBy: error || description ? hintId : undefined, invalid: Boolean(error) }}>
       <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
         <div className="flex min-h-5 items-end justify-between gap-3">
-          <label htmlFor={id} className="text-[0.8125rem] font-medium text-foreground">
+          <label htmlFor={id} className="text-[0.8125rem] font-[550] text-zinc-800">
             {label}
             {required ? <span className="ml-0.5 text-muted-foreground" aria-hidden="true">*</span> : null}
           </label>
@@ -49,7 +49,7 @@ export function Field({ label, description, error, required, aside, id: fixedId,
         </div>
         {children}
         {error ? (
-          <p id={hintId} className="text-xs text-[#b42318]">{error}</p>
+          <p id={hintId} className="text-xs font-medium text-red-700">{error}</p>
         ) : description ? (
           <p id={hintId} className="text-xs leading-relaxed text-muted-foreground">{description}</p>
         ) : null}
@@ -68,7 +68,7 @@ function useControlProps(props: { id?: string; "aria-describedby"?: string; "ari
 }
 
 export function Input({ className, ...props }: React.ComponentProps<"input">) {
-  return <input {...props} {...useControlProps(props)} className={cn(controlClass, "h-8", className)} />;
+  return <input {...props} {...useControlProps(props)} className={cn(controlClass, "h-9", className)} />;
 }
 
 export function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
@@ -81,7 +81,7 @@ const chevron =
 /** Native select: best keyboard, screen reader and mobile behaviour; styled to match. */
 export function Select({ className, children, ...props }: React.ComponentProps<"select">) {
   return (
-    <select {...props} {...useControlProps(props)} className={cn(controlClass, chevron, "h-8 appearance-none pr-8", className)}>
+    <select {...props} {...useControlProps(props)} className={cn(controlClass, chevron, "h-9 appearance-none pr-8", className)}>
       {children}
     </select>
   );
@@ -112,7 +112,7 @@ export function SwitchRow({ name, label, description, defaultChecked, onCheckedC
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-[0.8125rem] font-medium">{label}</label>
+        <label htmlFor={id} className="text-[0.8125rem] font-[550] text-zinc-800">{label}</label>
         {description ? <p id={`${id}-d`} className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p> : null}
       </div>
       <SwitchPrimitive.Root
@@ -122,9 +122,9 @@ export function SwitchRow({ name, label, description, defaultChecked, onCheckedC
         defaultChecked={defaultChecked}
         onCheckedChange={onCheckedChange}
         aria-describedby={description ? `${id}-d` : undefined}
-        className="relative mt-0.5 inline-flex h-[18px] w-8 shrink-0 cursor-pointer items-center rounded-full bg-foreground/15 p-0.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 data-checked:bg-success"
+        className="relative mt-0.5 inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full bg-zinc-300 p-0.5 shadow-[inset_0_1px_2px_rgb(0_0_0/0.1)] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-checked:bg-emerald-600"
       >
-        <SwitchPrimitive.Thumb className="block size-3.5 rounded-full bg-white shadow-sm transition-transform duration-150 data-checked:translate-x-3.5" />
+        <SwitchPrimitive.Thumb className="block size-4 rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.25)] transition-transform duration-150 data-checked:translate-x-4" />
       </SwitchPrimitive.Root>
     </div>
   );

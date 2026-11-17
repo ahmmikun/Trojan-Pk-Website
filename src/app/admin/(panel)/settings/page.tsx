@@ -1,7 +1,7 @@
-import { ArrowRight, Link2 } from "lucide-react";
+import { ArrowRight, Link2, Settings } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageHeader } from "@/components/admin-ui/display";
+import { IconTile, PageHeader } from "@/components/admin-ui/display";
 import { requireAdmin } from "@/features/admin/auth";
 import { SettingsForm } from "@/features/admin/settings/settings-form";
 
@@ -16,15 +16,15 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Site-wide text, links and defaults." />
+      <PageHeader icon={<IconTile tone="zinc" size="lg"><Settings /></IconTile>} title="Settings" description="Site-wide text, links and defaults." />
       <SettingsForm values={data ?? { tagline: "", description: "", application_form_url: null, default_og_image: null }} />
-      <Link href="/admin/social" className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 shadow-xs transition-colors hover:bg-muted/40 sm:px-5">
-        <span className="grid size-8 place-items-center rounded-md border border-border bg-background text-muted-foreground shadow-xs"><Link2 className="size-4" aria-hidden="true" /></span>
+      <Link href="/admin/social" className="group flex items-center gap-4 rounded-xl border border-zinc-200 bg-white px-5 py-4 shadow-[var(--shadow-card)] transition-colors hover:border-zinc-300 hover:bg-zinc-50">
+        <IconTile tone="blue"><Link2 /></IconTile>
         <span className="min-w-0 flex-1">
-          <span className="block text-[0.8125rem] font-medium">Social and community links</span>
-          <span className="block text-xs text-muted-foreground">{count ?? 0} links live in the navbar, hero, footer and Join page.</span>
+          <span className="block text-[0.875rem] font-[600] text-zinc-900">Social and community links</span>
+          <span className="block text-xs text-zinc-500">{count ?? 0} links live in the navbar, hero, footer and Join page.</span>
         </span>
-        <ArrowRight className="size-4 text-muted-foreground" aria-hidden="true" />
+        <ArrowRight className="size-4 text-zinc-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
       </Link>
     </>
   );

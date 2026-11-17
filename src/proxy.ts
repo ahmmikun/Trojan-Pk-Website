@@ -26,10 +26,10 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // getUser() validates the token with Supabase and refreshes it when needed.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() refreshes an expired session (writing new cookies via setAll) and verifies the
+  // JWT signature locally with the project's published keys: no Auth round trip per request.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ?? null;
 
   const isLogin = request.nextUrl.pathname === "/admin/login";
   if (!user && !isLogin) {

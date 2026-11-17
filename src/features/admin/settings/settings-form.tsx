@@ -14,9 +14,9 @@ const initial: SaveState = { status: "idle", message: null, errors: {} };
 
 function Row({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-4 border-b border-border px-4 py-5 last:border-0 sm:px-5 md:grid-cols-[16rem_minmax(0,1fr)] md:gap-8">
+    <div className="grid gap-4 border-b border-zinc-200 px-5 py-6 last:border-0 sm:px-6 md:grid-cols-[16rem_minmax(0,1fr)] md:gap-10">
       <div>
-        <h3 className="text-[0.8125rem] font-medium">{title}</h3>
+        <h3 className="text-[0.875rem] font-[600] text-zinc-900">{title}</h3>
         <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
       </div>
       <div className="flex min-w-0 flex-col gap-4">{children}</div>
@@ -42,7 +42,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
         const data = new FormData(e.currentTarget);
         startTransition(() => action(data));
       }}
-      className="overflow-hidden rounded-xl border border-border bg-card shadow-xs"
+      className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[var(--shadow-card)]"
     >
       <Row title="Identity" description="Shown in the hero and used as the default description for search engines and link previews.">
         <Field id="tagline" label="Tagline" required error={state.errors.tagline} aside={tag.counter}>
@@ -60,7 +60,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
       <Row title="Default social image" description="Used when the home page is shared, and by pages without their own image. 1200×630 works best.">
         <MediaField name="default_og_image" label="Image" defaultValue={values.default_og_image} folder="site" aspect="wide" error={state.errors.default_og_image} />
       </Row>
-      <div className="flex items-center justify-end gap-3 border-t border-border bg-muted/40 px-4 py-3 sm:px-5">
+      <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-5 py-3 sm:px-6">
         <Button type="submit" variant="primary" disabled={pending}>
           {pending ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
           Save settings
