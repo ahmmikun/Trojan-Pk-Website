@@ -183,8 +183,13 @@
   .lenis.lenis-smooth [data-lenis-prevent] {
     overscroll-behavior: contain;
   }
+  /* Paused (opening curtain): hide scrolling but keep the scrollbar's space reserved, so the
+     page width never changes when scrolling starts. Measured widths (GSAP pin spacers) stay correct. */
+  html {
+    scrollbar-gutter: stable;
+  }
   .lenis.lenis-stopped {
-    overflow: clip;
+    overflow: hidden;
   }
   body {
     @apply bg-background text-foreground antialiased;

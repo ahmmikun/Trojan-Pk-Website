@@ -30,8 +30,14 @@ export function SmoothScroll() {
   }, []);
 
   useEffect(() => {
-    if (ready) lenis.current?.start();
-    else lenis.current?.stop();
+    if (!ready) {
+      lenis.current?.stop();
+      return;
+    }
+    lenis.current?.start();
+    // Safety net: re-measure pinned sections once scrolling is live, in case anything was measured while paused.
+    const frame = requestAnimationFrame(() => ScrollTrigger.refresh());
+    return () => cancelAnimationFrame(frame);
   }, [ready]);
 
   return null;

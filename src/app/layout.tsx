@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { siteConfig } from "@/config/site";
+import { EarlyScript } from "@/components/early-script";
 import { MotionProvider } from "@/components/motion/motion";
 import { INTRO_KEY } from "@/lib/intro";
 import { THEME_KEY } from "@/lib/theme";
@@ -55,7 +56,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="dark h-full" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript + introScript }} />
+        {/* Runs before first paint (theme + curtain). See EarlyScript for why it is a client component. */}
+        <EarlyScript code={themeScript + introScript} />
       </head>
       <body className="flex min-h-full flex-col">
         {/* Without JavaScript: show all animated content and never show the curtain. */}
