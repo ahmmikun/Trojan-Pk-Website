@@ -298,9 +298,9 @@ Create a professional team directory.
 
 Initial profiles:
 
-1. **Professor Abdullah** — Founder & AI/ML Engineer.
-2. **Salman Ahmad** — Co-Founder & Full Stack AI Engineer.
-3. **Talha Irfan** — Core Team Member & Product Engineer.
+1. **Abdullah Yousuf** — Founder & CEO.
+2. **Salman Ahmad** — Co-Founder and Tech Lead.
+3. **Talha Irfan** — AI Community Lead.
 
 Each profile should support:
 - Profile photograph.

@@ -7,12 +7,12 @@ import type { TeamMember } from "@/types/content";
  */
 export const teamData: TeamMember[] = [
   {
-    slug: "salman-ahmad",
-    name: "Salman Ahmad",
-    role: "Founder & Tech Lead",
-    bio: "Founder of Trojans PK. Leads the community's technical direction and the projects members build together.",
-    photo: "/salman.jpg",
-    interests: ["Full-Stack Development", "AI & Machine Learning"],
+    slug: "abdullah-yousuf",
+    name: "Abdullah Yousuf",
+    role: "Founder & CEO",
+    bio: "Founder & CEO of Trojans PK. Leads the community's vision, strategy, and operations.",
+    photo: "/abdullah.jpg",
+    interests: ["AI & Machine Learning", "Community Leadership"],
     github: null,
     linkedin: null,
     website: null,
@@ -20,13 +20,12 @@ export const teamData: TeamMember[] = [
     order: 0,
   },
   {
-    slug: "professor-abdullah",
-    name: "Professor Abdullah",
-    role: "Community Operations Lead",
-    bio: "Leads community operations at Trojans PK, keeping events, channels and member activity running smoothly.",
-    // Sample stock photo (Unsplash), not Professor Abdullah. Replace with a real portrait.
-    photo: "/samples/team/masked-hacker.jpg",
-    interests: ["AI & Machine Learning"],
+    slug: "salman-ahmad",
+    name: "Salman Ahmad",
+    role: "Co-Founder and Tech Lead",
+    bio: "Co-Founder and Tech Lead of Trojans PK. Leads the community's technical direction and the projects members build together.",
+    photo: "/salman.jpg",
+    interests: ["Full-Stack Development", "AI & Machine Learning"],
     github: null,
     linkedin: null,
     website: null,
