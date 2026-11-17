@@ -69,6 +69,8 @@ export type EventType = (typeof EVENT_TYPES)[number]["value"];
 
 export type EventStatus = "UPCOMING" | "ONGOING" | "COMPLETED" | "CANCELLED";
 
+export type EventPhoto = { src: string; alt: string };
+
 export type CommunityEvent = DbMeta & {
   slug: string;
   title: string;
@@ -83,6 +85,8 @@ export type CommunityEvent = DbMeta & {
   location: string | null;
   organizer: string | null;
   registrationUrl: string | null;
+  /** Event photos in display order (shown as a gallery on the event page). */
+  gallery?: EventPhoto[];
   status: EventStatus;
   isFeatured: boolean;
   /** Set to false to keep the event off the site (draft). */

@@ -1,7 +1,9 @@
 "use client";
 
+import { Wand2 } from "lucide-react";
 import { Field, Input, Select, SwitchRow, Textarea, useCounter } from "@/components/admin-ui/field";
 import { cn } from "@/lib/utils";
+import { GalleryField } from "../media/gallery-field";
 import { MediaField } from "../media/media-field";
 import type { Field as FieldDef } from "../resources";
 import { MarkdownEditor } from "./markdown-editor";
@@ -22,7 +24,7 @@ type Props = {
   folder: string;
   onChange: () => void;
   /** Controlled slug (follows the title on new entries). */
-  slug?: { value: string; set: (v: string) => void; prefix?: string; locked?: boolean };
+  slug?: { value: string; set: (v: string) => void; generate?: () => void; auto?: boolean; prefix?: string; locked?: boolean };
   onTitleInput?: (v: string) => void;
 };
 
@@ -92,6 +94,14 @@ export function FormField({ field, value, error, errors, folder, onChange, slug,
           <Input type="datetime-local" name={field.name} defaultValue={toLocalInput(value)} required={field.required} className="tabular-nums" />
         </Field>
       );
+    case "date":
+      return (
+        <Field id={field.name} label={field.label} required={field.required} description={field.description} error={error}>
+          <Input type="date" name={field.name} defaultValue={toLocalInput(value).slice(0, 10)} required={field.required} onChange={onChange} className="tabular-nums" />
+        </Field>
+      );
+    case "gallery":
+      return <GalleryField name={field.name} label={field.label} defaultValue={value} folder={folder} description={field.description} error={error} max={field.max} onChange={onChange} />;
     case "number":
       return (
         <Field id={field.name} label={field.label} required={field.required} description={field.description} error={error}>
@@ -106,7 +116,21 @@ export function FormField({ field, value, error, errors, folder, onChange, slug,
       );
     case "slug":
       return (
-        <Field id={field.name} label={field.label} required={field.required} description={slug?.locked ? "Set when the entry was created." : field.description} error={error}>
+        <Field
+          id={field.name}
+          label={field.label}
+          required={field.required}
+          description={slug?.locked ? "Set when the entry was created." : slug?.auto ? "Created from the title as you type. Edit it to set your own." : field.description}
+          error={error}
+          aside={
+            slug?.generate && !slug.locked ? (
+              <button type="button" onClick={slug.generate} className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline" title="Create the URL from the title">
+                <Wand2 className="size-3" aria-hidden="true" />
+                From title
+              </button>
+            ) : null
+          }
+        >
           <div className="flex min-w-0 items-stretch overflow-hidden rounded-md border border-input bg-background shadow-xs focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/15">
             {slug?.prefix ? <span className="flex shrink-0 items-center border-r border-border bg-muted/50 px-2 text-xs text-muted-foreground">{slug.prefix}</span> : null}
             <input
@@ -115,6 +139,7 @@ export function FormField({ field, value, error, errors, folder, onChange, slug,
               value={slug?.value ?? ""}
               readOnly={slug?.locked}
               onChange={(e) => slug?.set(e.target.value)}
+              onBlur={(e) => !slug?.locked && e.target.value.endsWith("-") && slug?.set(e.target.value.replace(/-+$/, ""))}
               spellCheck={false}
               autoCapitalize="off"
               autoComplete="off"
@@ -122,6 +147,7 @@ export function FormField({ field, value, error, errors, folder, onChange, slug,
               aria-describedby={`${field.name}-hint`}
               className="h-8 min-w-0 flex-1 bg-transparent px-2 text-[0.8125rem] outline-none read-only:text-muted-foreground"
             />
+            {slug?.auto ? <span className="flex shrink-0 items-center pr-2 text-[0.625rem] font-[650] tracking-wide text-emerald-700 uppercase">Auto</span> : null}
           </div>
         </Field>
       );

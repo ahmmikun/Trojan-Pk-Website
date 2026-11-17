@@ -27,5 +27,8 @@ export default async function NewItemPage({ params }: PageProps<"/admin/[resourc
   const resource = getResource((await params).resource);
   if (!resource) notFound();
   await requireAdmin();
-  return <ItemEditor resourceKey={resource.key} id={null} values={{ sort_order: 0, ...DEFAULTS[resource.key] }} siteUrl={siteConfig.url} />;
+  // Today in Pakistan time, for date fields that need a starting value.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(new Date());
+  const dated = resource.key === "blog" ? { published_at: `${today}T00:00:00+05:00` } : {};
+  return <ItemEditor resourceKey={resource.key} id={null} values={{ sort_order: 0, ...DEFAULTS[resource.key], ...dated }} siteUrl={siteConfig.url} />;
 }

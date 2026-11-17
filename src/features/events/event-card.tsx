@@ -28,7 +28,7 @@ export function eventToMedia(event: CommunityEvent): MediaItem {
     title: event.title,
     subtitle: [eventTypeLabel(event.type), event.location].filter(Boolean).join(" · "),
     meta: event.startsAt ? `© ${event.startsAt.getFullYear()}` : null,
-    image: event.image,
+    image: event.image ?? event.gallery?.[0]?.src ?? null,
     badge: open ? statusLabel[event.status] : null,
   };
 }
@@ -42,7 +42,7 @@ export function EventCard({ event, className }: { event: CommunityEvent; classNa
         className,
       )}
     >
-      <Cover src={event.image} title={event.title} label={eventTypeLabel(event.type)} className="border-b border-border" />
+      <Cover src={event.image ?? event.gallery?.[0]?.src ?? null} title={event.title} label={eventTypeLabel(event.type)} className="border-b border-border" />
       <div className="flex flex-1 flex-col p-5">
         <div className="flex flex-wrap items-center gap-2">
           <Chip>{eventTypeLabel(event.type)}</Chip>

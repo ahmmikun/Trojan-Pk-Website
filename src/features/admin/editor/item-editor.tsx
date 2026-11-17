@@ -9,6 +9,7 @@ import { Button } from "@/components/admin-ui/button";
 import { formatDate, Kbd, PublishStatus, relativeTime } from "@/components/admin-ui/display";
 import { ConfirmDialog, DropdownMenu, MenuItem, MenuLink, MenuSeparator } from "@/components/admin-ui/overlay";
 import { toast } from "@/components/admin-ui/toast";
+import { cleanSlugInput, toSlug } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { deleteItem, duplicateItem, saveItem, type SaveState } from "../actions";
 import { parseMarkdownFile } from "../markdown-import";
@@ -16,9 +17,6 @@ import { allFields, getResource, SEO_FIELDS, type Field } from "../resources";
 import { FormField } from "./form-field";
 import { SeoPreview } from "./seo-preview";
 
-function toSlug(text: string) {
-  return text.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-}
 
 const initial: SaveState = { status: "idle", message: null, errors: {} };
 
@@ -45,7 +43,9 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
   const slugField = resource.fields.find((f) => f.type === "slug");
   const keyLocked = resource.idKind === "key" && slugField?.name === resource.idColumn && !isNew;
   const [slug, setSlug] = useState(String(values[slugField?.name ?? ""] ?? ""));
-  const [slugTouched, setSlugTouched] = useState(!isNew);
+  // The URL follows the title on new entries and on drafts whose URL still matches their title.
+  // Published entries keep their URL (changing it would break shared links) unless edited by hand.
+  const [slugTouched, setSlugTouched] = useState(() => !isNew && (Boolean(values.published) || String(values.slug ?? "") !== toSlug(String(values[resource.titleField] ?? ""))));
   const [title, setTitle] = useState(String(values[resource.titleField] ?? ""));
 
   // Field defaults. Replaced by "Import .md", which also remounts the fields (formKey) so they pick up the new values.
@@ -180,7 +180,23 @@ export function ItemEditor({ resourceKey, id, values, siteUrl, publicHref, justC
       errors={errors}
       folder={resource.key}
       onChange={markDirty}
-      slug={f.type === "slug" ? { value: slug, set: (v) => (setSlug(v), setSlugTouched(true), markDirty()), prefix: f.placeholder, locked: keyLocked } : undefined}
+      slug={
+        f.type === "slug"
+          ? {
+              value: slug,
+              set: (v) => {
+                const next = keyLocked || resource.idKind === "key" ? v : cleanSlugInput(v);
+                setSlug(next);
+                setSlugTouched(next !== "");
+                markDirty();
+              },
+              generate: slugField?.name === "slug" ? () => (setSlug(toSlug(title)), setSlugTouched(false), markDirty()) : undefined,
+              auto: !slugTouched && slugField?.name === "slug",
+              prefix: f.placeholder,
+              locked: keyLocked,
+            }
+          : undefined
+      }
       onTitleInput={f.name === resource.titleField ? (v) => (setTitle(v), !slugTouched && slugField?.name === "slug" && setSlug(toSlug(v))) : undefined}
     />
   );

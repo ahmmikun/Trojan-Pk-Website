@@ -1,3 +1,4 @@
+import { IMAGE_QUALITY } from "@/config/images";
 import { AlertTriangle, Info, Lightbulb, MessageSquareWarning, OctagonAlert } from "lucide-react";
 import Link from "next/link";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -36,7 +37,7 @@ function optimizable(src: string) {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return Boolean(base && src.startsWith(`${base}/storage/v1/object/public/media/`));
 }
-const optimized = (src: string, w: number) => `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=75`;
+const optimized = (src: string, w: number) => `/_next/image?url=${encodeURIComponent(src)}&w=${w}&q=${IMAGE_QUALITY}`;
 
 function safeHref(href: string | undefined) {
   return href && /^(https?:|mailto:|\/(?!\/)|#)/i.test(href) ? href : null;
