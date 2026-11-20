@@ -20,6 +20,7 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+  { key: "Vary", value: "Accept" },
   {
     key: "Content-Security-Policy",
     value: `default-src 'self'; script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}${isDev ? " ws:" : ""}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'${isDev ? "" : "; upgrade-insecure-requests"}`,
@@ -34,7 +35,7 @@ const nextConfig: NextConfig = {
   images: {
     // Served by the Next.js image optimizer (Vercel Image Optimization in production).
     formats: ["image/avif", "image/webp"],
-    qualities: [IMAGE_QUALITY],
+    qualities: [75, IMAGE_QUALITY],
     // Optimized images are immutable per URL, so cache them for a year at the edge/browser.
     minimumCacheTTL: 60 * 60 * 24 * 365,
     // Files in /public, plus uploads in the Supabase Storage "media" bucket.
