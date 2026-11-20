@@ -14,6 +14,19 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
+  keywords: [
+    "developer community",
+    "open-source community",
+    "software engineering community",
+    "technology community Pakistan",
+    "coding community",
+    "AI hackathons",
+    "tech mentorship",
+    "Trojans PK",
+  ],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     siteName: siteConfig.name,
@@ -36,6 +49,7 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
+  manifest: "/site.webmanifest",
 };
 
 export const viewport: Viewport = {

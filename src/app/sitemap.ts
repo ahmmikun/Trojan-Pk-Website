@@ -6,7 +6,7 @@ import { getProjects } from "@/content/projects";
 
 export const revalidate = 3600;
 
-const staticRoutes = ["", "/about", "/community", "/projects", "/events", "/team", "/blog", "/join", "/privacy", "/terms"];
+const staticRoutes = ["", "/about", "/contact", "/community", "/projects", "/events", "/team", "/blog", "/join", "/privacy", "/terms"];
 
 /**
  * Only indexable pages: sample content and items marked "Hide from search engines" in

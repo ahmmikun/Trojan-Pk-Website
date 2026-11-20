@@ -78,7 +78,10 @@ export async function Footer() {
                   <a href={email.href} className={linkClass}>{email.href.replace("mailto:", "")}</a>
                 </li>
               ) : null}
-              <li className="text-base text-muted-foreground">Pakistan</li>
+              <li className="text-base text-muted-foreground">Lahore, Pakistan</li>
+              <li>
+                <Link href="/contact" className={linkClass}>Contact & Inquiries</Link>
+              </li>
               <li>
                 <Link href="/join" className={linkClass}>Apply for membership</Link>
               </li>

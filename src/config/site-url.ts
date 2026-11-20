@@ -22,14 +22,17 @@ function resolveSiteUrl(): string {
     env.CF_PAGES_URL, // Cloudflare Pages
   ];
   const found = candidates.find((v) => v && v.trim());
-  if (found) return normalize(found.trim());
+  if (found) {
+    const norm = normalize(found.trim());
+    if (norm.includes("trojan-pk-website.vercel.app") || norm.includes("trojanpk.tech")) {
+      return "https://www.trojanpk.tech";
+    }
+    return norm;
+  }
 
   const onCiOrHost = Boolean(env.CI || env.VERCEL || env.NETLIFY || env.CF_PAGES);
   if (onCiOrHost && env.NODE_ENV === "production" && !env.ALLOW_LOCALHOST_SITE_URL) {
-    throw new Error(
-      "[site-url] No public site URL. Set NEXT_PUBLIC_SITE_URL (e.g. https://trojans.pk) in your host's environment variables. " +
-        "To build anyway (e.g. CI checks), set ALLOW_LOCALHOST_SITE_URL=1.",
-    );
+    return "https://www.trojanpk.tech";
   }
   return "http://localhost:3000";
 }

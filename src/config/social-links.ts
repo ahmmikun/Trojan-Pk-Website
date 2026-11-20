@@ -80,6 +80,6 @@ export const socialLinks: readonly SocialLinkItem[] = [
   { id: "youtube", platform: "youtube", label: "YouTube", url: null, icon: "youtube", isInvite: false, order: 7, isVisible: true },
   { id: "x", platform: "x", label: "X (Twitter)", url: null, icon: "x", isInvite: false, order: 8, isVisible: true },
   { id: "tiktok", platform: "tiktok", label: "TikTok", url: null, icon: "tiktok", isInvite: false, order: 9, isVisible: true },
-  { id: "email", platform: "email", label: "Official Email", url: null, icon: "email", isInvite: false, order: 10, isVisible: true },
+  { id: "email", platform: "email", label: "Official Email", url: "talha@trojanspk.com", icon: "email", isInvite: false, order: 10, isVisible: true },
   { id: "website", platform: "website", label: "Official Website", url: null, icon: "website", isInvite: false, order: 11, isVisible: true },
 ];
