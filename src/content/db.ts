@@ -42,6 +42,9 @@ export async function dbEvents(): Promise<CommunityEvent[] | null> {
       location: strOrNull(r.location),
       organizer: strOrNull(r.organizer),
       registrationUrl: strOrNull(r.registration_url),
+      gallery: arr<{ src?: unknown; alt?: unknown }>(r.gallery)
+        .filter((p) => typeof p?.src === "string" && p.src)
+        .map((p) => ({ src: p.src as string, alt: str(p.alt) })),
       status: r.status as CommunityEvent["status"],
       isFeatured: Boolean(r.is_featured),
       published: true,

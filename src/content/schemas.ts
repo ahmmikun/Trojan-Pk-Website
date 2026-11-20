@@ -58,6 +58,7 @@ export const eventSchema = z.object({
   location: z.string().nullable(),
   organizer: z.string().nullable(),
   registrationUrl: optionalUrl,
+  gallery: z.array(z.object({ src: z.string().refine((v) => v.startsWith("/") || isHttpUrl(v), 'must start with "/" or be an http(s) URL'), alt: z.string() })).optional(),
   status: z.enum(["UPCOMING", "ONGOING", "COMPLETED", "CANCELLED"]),
   isFeatured: z.boolean(),
   published: z.boolean(),

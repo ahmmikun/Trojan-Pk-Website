@@ -39,68 +39,76 @@ export async function listMedia(): Promise<MediaAsset[]> {
 
 type UploadState = { status: "idle" | "uploading" | "done" | "error"; progress: number; error: string | null };
 
+type UploadOptions = { alt?: string; onProgress?: (percent: number) => void; onXhr?: (xhr: XMLHttpRequest) => void };
+
+/**
+ * Upload one file and record it in the media library. Throws an Error with a readable
+ * message on failure. Used by `useUpload` (single image) and the gallery (many at once).
+ */
+export async function uploadFile(file: File, folder: string, { alt, onProgress, onXhr }: UploadOptions = {}): Promise<MediaAsset> {
+  const problem = validateFile(file);
+  if (problem) throw new Error(problem);
+
+  const supabase = createClient();
+  const { url, key } = requireSupabaseEnv();
+  const { data: session } = await supabase.auth.getSession();
+  const token = session.session?.access_token;
+  if (!token) throw new Error("Your session has expired. Sign in again.");
+
+  const safeFolder = folder.replace(/[^a-z0-9-]/g, "") || "uploads";
+  const path = `${safeFolder}/${new Date().getUTCFullYear()}/${crypto.randomUUID()}.${EXT[file.type]}`;
+
+  // XHR instead of fetch for upload progress events.
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    onXhr?.(xhr);
+    xhr.open("POST", `${url}/storage/v1/object/${MEDIA_BUCKET}/${path}`);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.setRequestHeader("apikey", key);
+    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.setRequestHeader("Cache-Control", "max-age=31536000");
+    xhr.setRequestHeader("x-upsert", "false");
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(Math.round((e.loaded / e.total) * 100));
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) return resolve();
+      let message = `Upload failed (${xhr.status}).`;
+      try {
+        const body = JSON.parse(xhr.responseText) as { message?: string };
+        if (body.message?.includes("row-level security")) message = "Your account is not allowed to upload.";
+        else if (body.message) message = `Upload failed: ${body.message}`;
+      } catch {}
+      reject(new Error(message));
+    };
+    xhr.onerror = () => reject(new Error("Network error. Check your connection and try again."));
+    xhr.onabort = () => reject(new Error("Upload cancelled."));
+    xhr.send(file);
+  });
+
+  const { width, height } = await readDimensions(file);
+  const { data, error } = await supabase
+    .from("media_assets")
+    .insert({ path, alt: (alt ?? altFromName(file.name)).slice(0, 300), width, height, mime_type: file.type, size_bytes: file.size })
+    .select(MEDIA_COLUMNS)
+    .single();
+  if (error) throw new Error(`Uploaded, but saving it to the library failed: ${error.message}`);
+  return toAsset(data);
+}
+
 export function useUpload(folder: string) {
   const [state, setState] = useState<UploadState>({ status: "idle", progress: 0, error: null });
   const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   const upload = useCallback(
     async (file: File, alt?: string): Promise<MediaAsset | null> => {
-      const problem = validateFile(file);
-      if (problem) {
-        setState({ status: "error", progress: 0, error: problem });
-        return null;
-      }
       setState({ status: "uploading", progress: 0, error: null });
-
-      const supabase = createClient();
-      const { url, key } = requireSupabaseEnv();
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token;
-      if (!token) {
-        setState({ status: "error", progress: 0, error: "Your session has expired. Sign in again." });
-        return null;
-      }
-
-      const safeFolder = folder.replace(/[^a-z0-9-]/g, "") || "uploads";
-      const path = `${safeFolder}/${new Date().getUTCFullYear()}/${crypto.randomUUID()}.${EXT[file.type]}`;
-
       try {
-        // XHR instead of fetch for upload progress events.
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhrRef.current = xhr;
-          xhr.open("POST", `${url}/storage/v1/object/${MEDIA_BUCKET}/${path}`);
-          xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-          xhr.setRequestHeader("apikey", key);
-          xhr.setRequestHeader("Content-Type", file.type);
-          xhr.setRequestHeader("Cache-Control", "max-age=31536000");
-          xhr.setRequestHeader("x-upsert", "false");
-          xhr.upload.onprogress = (e) => e.lengthComputable && setState((s) => ({ ...s, progress: Math.round((e.loaded / e.total) * 100) }));
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) return resolve();
-            let message = `Upload failed (${xhr.status}).`;
-            try {
-              const body = JSON.parse(xhr.responseText) as { message?: string };
-              if (body.message?.includes("row-level security")) message = "Your account is not allowed to upload.";
-              else if (body.message) message = `Upload failed: ${body.message}`;
-            } catch {}
-            reject(new Error(message));
-          };
-          xhr.onerror = () => reject(new Error("Network error. Check your connection and try again."));
-          xhr.onabort = () => reject(new Error("Upload cancelled."));
-          xhr.send(file);
+        const asset = await uploadFile(file, folder, {
+          alt,
+          onXhr: (xhr) => (xhrRef.current = xhr),
+          onProgress: (progress) => setState((s) => ({ ...s, progress })),
         });
-
-        const { width, height } = await readDimensions(file);
-        const { data, error } = await supabase
-          .from("media_assets")
-          .insert({ path, alt: (alt ?? altFromName(file.name)).slice(0, 300), width, height, mime_type: file.type, size_bytes: file.size })
-          .select(MEDIA_COLUMNS)
-          .single();
-        if (error) throw new Error(`Uploaded, but saving it to the library failed: ${error.message}`);
-
         setState({ status: "done", progress: 100, error: null });
-        return toAsset(data);
+        return asset;
       } catch (e) {
         setState({ status: "error", progress: 0, error: (e as Error).message });
         return null;

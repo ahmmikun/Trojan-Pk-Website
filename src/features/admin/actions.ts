@@ -138,7 +138,7 @@ export async function getMediaUsage(url: string): Promise<MediaUsage[]> {
       const filters = columns.map((c) => `${c}.eq.${JSON.stringify(url)}`);
       const queries = [];
       if (filters.length) queries.push(supabase.from(r.table).select(`${r.idColumn}, ${r.titleField}`).or(filters.join(",")).limit(20));
-      if (r.table === "achievements") queries.push(supabase.from(r.table).select(`${r.idColumn}, ${r.titleField}`).contains("images", [{ src: url }]).limit(20));
+      for (const g of r.fields.filter((f) => f.type === "gallery")) queries.push(supabase.from(r.table).select(`${r.idColumn}, ${r.titleField}`).contains(g.name, [{ src: url }]).limit(20));
       for (const { data } of await Promise.all(queries)) {
         for (const row of (data ?? []) as unknown as Record<string, unknown>[]) {
           uses.push({ resource: r.key, label: r.singular, title: String(row[r.titleField] ?? "Untitled"), href: `/admin/${r.key}/${encodeURIComponent(String(row[r.idColumn]))}` });

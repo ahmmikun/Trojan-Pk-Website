@@ -1,4 +1,4 @@
-﻿# Trojans PK
+# Trojans PK
 
 Website for **Trojans PK**, a Pakistan-based developer and open-source community.
 *Learn. Build. Collaborate. Innovate.*
@@ -106,7 +106,7 @@ push to `main` and every pull request.
 
 Use `next/image` for every image. Put files in `public/` (local) or add the host to
 `images.remotePatterns` in `next.config.ts` (remote). Next.js serves AVIF/WebP at the requested size and
-caches results for a year. Only quality 75 is allowed (`images.qualities`). Add `sizes` to `fill` images and
+caches results for a year. Images are served at quality 82, the only value in `images.qualities` (set in `src/config/images.ts`). Add `sizes` to `fill` images and
 `priority` to the main above-the-fold image.
 
 ### Security headers

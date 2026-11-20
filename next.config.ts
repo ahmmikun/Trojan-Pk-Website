@@ -1,3 +1,4 @@
+import { IMAGE_QUALITY } from "./src/config/images";
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -21,7 +22,7 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
   {
     key: "Content-Security-Policy",
-    value: `default-src 'self'; script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}${isDev ? " ws:" : ""}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'${isDev ? "" : "; upgrade-insecure-requests"}`,
+    value: `default-src 'self'; script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self'${supabaseOrigin ? ` ${supabaseOrigin}` : ""}${isDev ? " ws:" : ""}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'${isDev ? "" : "; upgrade-insecure-requests"}`,
   },
 ];
 
@@ -33,7 +34,7 @@ const nextConfig: NextConfig = {
   images: {
     // Served by the Next.js image optimizer (Vercel Image Optimization in production).
     formats: ["image/avif", "image/webp"],
-    qualities: [75],
+    qualities: [IMAGE_QUALITY],
     // Optimized images are immutable per URL, so cache them for a year at the edge/browser.
     minimumCacheTTL: 60 * 60 * 24 * 365,
     // Files in /public, plus uploads in the Supabase Storage "media" bucket.

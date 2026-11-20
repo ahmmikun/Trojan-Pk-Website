@@ -1,4 +1,5 @@
 import "server-only";
+import { toSlug } from "@/lib/slug";
 import { supabaseEnv } from "@/lib/supabase/env";
 import { allFields, type Field, type Resource, type SubField } from "./resources";
 
@@ -57,6 +58,26 @@ function parseField(resource: Resource, field: Field, form: FormData, errors: Fi
 
   if (field.type === "boolean") return raw === "on" || raw === "true";
 
+  if (field.type === "gallery") {
+    let items: unknown;
+    try {
+      items = JSON.parse(text || "[]");
+    } catch {
+      return fail("The photo list could not be read. Reload the page and try again.");
+    }
+    const max = field.max ?? 60;
+    if (!Array.isArray(items)) return fail("The photo list could not be read.");
+    if (items.length > max) return fail(`Up to ${max} photos (currently ${items.length}).`);
+    const photos: { src: string; alt: string }[] = [];
+    for (const [i, item] of items.entries()) {
+      const src = typeof item?.src === "string" ? item.src.trim() : "";
+      if (!src) continue;
+      if (!validImage(src)) return fail(`Photo ${i + 1} is not an uploaded image.`);
+      photos.push({ src, alt: typeof item?.alt === "string" ? item.alt.trim().slice(0, 300) : "" });
+    }
+    return photos;
+  }
+
   if (field.type === "repeater") {
     let rows: unknown;
     try {
@@ -73,6 +94,12 @@ function parseField(resource: Resource, field: Field, form: FormData, errors: Fi
   // A chosen primary key (stats.key, social_links.id) is set once and never changed.
   const isKey = resource.idKind === "key" && field.name === resource.idColumn;
   if (isKey && !isNew) return undefined;
+
+  // An empty URL slug is derived from the title.
+  if (field.type === "slug" && !isKey && !text) {
+    const fromTitle = toSlug(String(form.get(resource.titleField) ?? ""));
+    if (fromTitle) return fromTitle;
+  }
 
   if (!text) {
     if (field.required) return fail(`${field.label} is required.`);
@@ -104,6 +131,9 @@ function parseField(resource: Resource, field: Field, form: FormData, errors: Fi
     }
     case "datetime":
       return DATETIME_RE.test(text) ? `${text}:00${PKT_OFFSET}` : fail("Pick a date and time.");
+    case "date":
+      // Date only: stored as midnight Pakistan time, which the site shows without a time.
+      return DATE_RE.test(text) ? `${text}T00:00:00${PKT_OFFSET}` : fail("Pick a date.");
     case "tags":
       return [...new Set(text.split(/[,\n]/).map((t) => t.trim()).filter(Boolean))].slice(0, 30).map((t) => t.slice(0, 60));
     default:

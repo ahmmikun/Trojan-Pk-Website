@@ -7,16 +7,31 @@ import { controlClass } from "@/components/admin-ui/field";
 import { Dialog } from "@/components/admin-ui/overlay";
 import { cn } from "@/lib/utils";
 import { MediaThumb } from "./media-thumb";
-import { ACCEPT_ATTR, formatBytes, listMedia, useUpload, type MediaAsset } from "./use-upload";
+import { ACCEPT_ATTR, formatBytes, listMedia, uploadFile, type MediaAsset } from "./use-upload";
 
-/** Media library dialog: choose an existing image or upload a new one. Used by every image field. */
-export function MediaPicker({ open, onOpenChange, onSelect, folder, selected }: { open: boolean; onOpenChange: (open: boolean) => void; onSelect: (asset: MediaAsset) => void; folder: string; selected?: string | null }) {
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  folder: string;
+  /** Single mode: the chosen image. */
+  onSelect?: (asset: MediaAsset) => void;
+  selected?: string | null;
+  /** Multi mode (galleries): pick several, returned in the order they were picked. */
+  multiple?: boolean;
+  onSelectMany?: (assets: MediaAsset[]) => void;
+  /** Multi mode: URLs already in the gallery, marked as added. */
+  existing?: string[];
+};
+
+/** Media library dialog: choose existing images or upload new ones. Used by every image and gallery field. */
+export function MediaPicker({ open, onOpenChange, onSelect, folder, selected, multiple, onSelectMany, existing = [] }: Props) {
   const [items, setItems] = useState<MediaAsset[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [focused, setFocused] = useState<MediaAsset | null>(null);
+  const [picked, setPicked] = useState<MediaAsset[]>([]);
+  const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { upload, status, progress, error: uploadError } = useUpload(folder);
 
   useEffect(() => {
     if (!open) return;
@@ -29,31 +44,64 @@ export function MediaPicker({ open, onOpenChange, onSelect, folder, selected }: 
     };
   }, [open]);
 
-  const shown = (items ?? []).filter((a) => !query || `${a.alt} ${a.path}`.toLowerCase().includes(query.toLowerCase()));
-  const choose = (asset: MediaAsset) => {
-    onSelect(asset);
-    onOpenChange(false);
+  const close = (next: boolean) => {
+    if (!next) {
+      setPicked([]);
+      setUploadError(null);
+    }
+    onOpenChange(next);
   };
 
-  async function onFile(file: File | undefined) {
-    if (!file) return;
-    const asset = await upload(file);
+  const shown = (items ?? []).filter((a) => !query || `${a.alt} ${a.path}`.toLowerCase().includes(query.toLowerCase()));
+  const focused = picked.at(-1) ?? null;
+
+  const confirm = (list: MediaAsset[]) => {
+    if (!list.length) return;
+    if (multiple) onSelectMany?.(list);
+    else onSelect?.(list[0]!);
+    close(false);
+  };
+
+  const toggle = (a: MediaAsset) => setPicked((p) => (multiple ? (p.some((x) => x.id === a.id) ? p.filter((x) => x.id !== a.id) : [...p, a]) : [a]));
+
+  async function onFiles(files: FileList | null) {
+    const list = Array.from(files ?? []);
     if (fileRef.current) fileRef.current.value = "";
-    if (asset) choose(asset);
+    if (!list.length) return;
+    setUploadError(null);
+    setUploading({ done: 0, total: list.length });
+    const added: MediaAsset[] = [];
+    for (const file of multiple ? list : list.slice(0, 1)) {
+      try {
+        added.push(await uploadFile(file, folder));
+      } catch (e) {
+        setUploadError(`${file.name}: ${(e as Error).message}`);
+      }
+      setUploading((u) => u && { ...u, done: u.done + 1 });
+    }
+    setUploading(null);
+    if (!added.length) return;
+    setItems((cur) => [...added, ...(cur ?? [])]);
+    if (multiple) setPicked((p) => [...p, ...added]);
+    else confirm(added);
   }
 
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={close}
       size="xl"
       title="Media library"
-      description="Choose an image, or upload a new one."
+      description={multiple ? "Select one or more images, or upload new ones." : "Choose an image, or upload a new one."}
       footer={
         <>
-          <p className="mr-auto truncate text-xs text-muted-foreground">{focused ? `${focused.alt || "No alt text"} · ${focused.width ?? "?"}×${focused.height ?? "?"} · ${formatBytes(focused.size_bytes)}` : `${items?.length ?? 0} images`}</p>
-          <Button onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button variant="primary" disabled={!focused} onClick={() => focused && choose(focused)}>Use image</Button>
+          <p className="mr-auto truncate text-xs text-muted-foreground">
+            {multiple && picked.length ? `${picked.length} selected` : focused ? `${focused.alt || "No alt text"} · ${focused.width ?? "?"}×${focused.height ?? "?"} · ${formatBytes(focused.size_bytes)}` : `${items?.length ?? 0} images`}
+          </p>
+          <Button onClick={() => close(false)}>Cancel</Button>
+          <Button variant="primary" disabled={!picked.length} onClick={() => confirm(picked)}>
+            {multiple ? (picked.length > 1 ? `Add ${picked.length} images` : "Add image") : "Use image"}
+          </Button>
         </>
       }
     >
@@ -64,11 +112,11 @@ export function MediaPicker({ open, onOpenChange, onSelect, folder, selected }: 
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by alt text or file name" className={cn(controlClass, "h-8 pl-8")} />
           </label>
-          <Button disabled={status === "uploading"} onClick={() => fileRef.current?.click()}>
-            {status === "uploading" ? <Loader2 className="animate-spin" aria-hidden="true" /> : <UploadCloud aria-hidden="true" />}
-            {status === "uploading" ? `Uploading ${progress}%` : "Upload new"}
+          <Button disabled={uploading !== null} onClick={() => fileRef.current?.click()}>
+            {uploading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <UploadCloud aria-hidden="true" />}
+            {uploading ? `Uploading ${uploading.done + 1} of ${uploading.total}` : "Upload new"}
           </Button>
-          <input ref={fileRef} type="file" accept={ACCEPT_ATTR} className="sr-only" tabIndex={-1} aria-hidden="true" onChange={(e) => void onFile(e.target.files?.[0])} />
+          <input ref={fileRef} type="file" accept={ACCEPT_ATTR} multiple={multiple} className="sr-only" tabIndex={-1} aria-hidden="true" onChange={(e) => void onFiles(e.target.files)} />
         </div>
         {uploadError ? <p role="alert" className="text-[0.8125rem] text-[#b42318]">{uploadError}</p> : null}
         {loadError ? <p role="alert" className="text-[0.8125rem] text-[#b42318]">Could not load the library: {loadError}</p> : null}
@@ -82,25 +130,30 @@ export function MediaPicker({ open, onOpenChange, onSelect, folder, selected }: 
         ) : shown.length === 0 ? (
           <p className="py-14 text-center text-[0.8125rem] text-muted-foreground">{items?.length ? "No images match your search." : "The library is empty. Upload the first image."}</p>
         ) : (
-          <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5" role="listbox" aria-label="Images">
+          <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5" role="listbox" aria-multiselectable={multiple || undefined} aria-label="Images">
             {shown.map((a) => {
-              const isFocused = focused?.id === a.id;
-              const isCurrent = selected === a.url;
+              const order = picked.findIndex((x) => x.id === a.id);
+              const isPicked = order !== -1;
+              const isCurrent = multiple ? existing.includes(a.url) : selected === a.url;
               return (
-                <li key={a.id} role="option" aria-selected={isFocused}>
+                <li key={a.id} role="option" aria-selected={isPicked}>
                   <button
                     type="button"
-                    onClick={() => setFocused(a)}
-                    onDoubleClick={() => choose(a)}
+                    onClick={() => toggle(a)}
+                    onDoubleClick={() => !multiple && confirm([a])}
                     className={cn(
                       "group relative block w-full overflow-hidden rounded-lg outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring",
-                      isFocused ? "ring-2 ring-foreground" : "ring-1 ring-border hover:ring-foreground/30",
+                      isPicked ? "ring-2 ring-foreground" : "ring-1 ring-border hover:ring-foreground/30",
                     )}
-                    aria-label={a.alt || a.path.split("/").pop()}
+                    aria-label={`${a.alt || a.path.split("/").pop()}${isCurrent ? (multiple ? " (already added)" : " (current)") : ""}`}
                   >
-                    <MediaThumb src={a.url} className="aspect-square w-full" />
-                    {isFocused || isCurrent ? (
-                      <span className={cn("absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full text-white shadow", isFocused ? "bg-foreground" : "bg-success")} aria-hidden="true">
+                    <MediaThumb src={a.url} className={cn("aspect-square w-full transition-opacity", isCurrent && !isPicked && multiple && "opacity-60")} />
+                    {isPicked ? (
+                      <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-foreground text-[0.6875rem] font-[650] text-white tabular-nums shadow" aria-hidden="true">
+                        {multiple ? order + 1 : <Check className="size-3" />}
+                      </span>
+                    ) : isCurrent ? (
+                      <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-success text-white shadow" aria-hidden="true">
                         <Check className="size-3" />
                       </span>
                     ) : null}

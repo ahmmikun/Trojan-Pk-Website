@@ -10,6 +10,7 @@ import { Markdown } from "@/components/common/markdown";
 import { Section, SectionHeading } from "@/components/common/section";
 import { siteConfig } from "@/config/site";
 import { EventStatusChip, eventToMedia, eventTypeLabel } from "@/features/events/event-card";
+import { EventGallery } from "@/features/events/event-gallery";
 import { eventDateLabel } from "@/lib/format";
 import { getEventBySlug, getEvents } from "@/content/events";
 import { absoluteUrl, detailMetadata } from "@/lib/seo";
@@ -25,7 +26,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/events/[slug]">): Promise<Metadata> {
   const event = await getEventBySlug((await params).slug);
   if (!event) return {};
-  return detailMetadata({ path: `/events/${event.slug}`, title: event.title, description: event.summary, image: event.image, seo: event.seo, isSample: event.isSample });
+  return detailMetadata({ path: `/events/${event.slug}`, title: event.title, description: event.summary, image: event.image ?? event.gallery?.[0]?.src ?? null, seo: event.seo, isSample: event.isSample });
 }
 
 export default async function EventPage({ params }: PageProps<"/events/[slug]">) {
@@ -37,10 +38,12 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
   const more = [...upcoming, ...past].filter((e) => e.slug !== event.slug).slice(0, 2);
 
   const date = eventDateLabel(event);
+  const photos = event.gallery ?? [];
+  const images = [event.image, ...photos.map((p) => p.src)].filter((s): s is string => Boolean(s)).slice(0, 10);
   const open = event.status === "UPCOMING" || event.status === "ONGOING";
   const facts = [
     { label: "Type", value: eventTypeLabel(event.type) },
-    date && { label: "Date and time", value: date },
+    date && { label: "Date", value: date },
     event.location && { label: "Location", value: event.location },
     event.organizer && { label: "Organizer", value: event.organizer },
   ].filter(Boolean) as { label: string; value: string }[];
@@ -58,7 +61,7 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
           ...(event.endsAt ? { endDate: event.endsAt.toISOString() } : {}),
           eventStatus: event.status === "CANCELLED" ? "https://schema.org/EventCancelled" : "https://schema.org/EventScheduled",
           eventAttendanceMode: event.location?.toLowerCase() === "online" ? "https://schema.org/OnlineEventAttendanceMode" : "https://schema.org/OfflineEventAttendanceMode",
-          ...(event.image ? { image: [absoluteUrl(siteConfig.url, event.image)] } : {}),
+          ...(images.length ? { image: images.map((src) => absoluteUrl(siteConfig.url, src)) } : {}),
           ...(event.location ? { location: event.location.toLowerCase() === "online" ? { "@type": "VirtualLocation", url: `${siteConfig.url}/events/${event.slug}` } : { "@type": "Place", name: event.location, address: event.location } } : {}),
           organizer: { "@type": "Organization", name: event.organizer ?? siteConfig.name, url: siteConfig.url },
         }}
@@ -75,7 +78,7 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
         title={event.title}
         summary={event.summary}
         actions={open && event.registrationUrl ? <ButtonLink href={event.registrationUrl} external emphasis>Register <ArrowUpRight /></ButtonLink> : undefined}
-        cover={{ src: event.image, title: event.title, label: eventTypeLabel(event.type) }}
+        cover={{ src: event.image ?? photos[0]?.src ?? null, title: event.title, label: eventTypeLabel(event.type) }}
       />
 
       <Container className="grid gap-16 py-20 sm:py-28 lg:grid-cols-12">
@@ -86,6 +89,18 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
           <DetailAside label="Event details" items={facts} />
         </div>
       </Container>
+
+      {photos.length > 0 ? (
+        <Section id="photos" aria-labelledby="photos-heading">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <SectionHeading eyebrow="Gallery" title={<span id="photos-heading">Photos from the event</span>} />
+            <p className="text-sm text-muted-foreground tabular-nums">{photos.length} {photos.length === 1 ? "photo" : "photos"}</p>
+          </div>
+          <div className="mt-12 sm:mt-16">
+            <EventGallery photos={photos} title={event.title} />
+          </div>
+        </Section>
+      ) : null}
 
       {more.length > 0 ? (
         <Section>
