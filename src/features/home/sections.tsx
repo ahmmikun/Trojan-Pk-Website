@@ -6,7 +6,7 @@ import { MediaGrid } from "@/components/common/media-grid";
 import { Reveal } from "@/components/common/reveal";
 import { Section, SectionHeading } from "@/components/common/section";
 import { Stagger, StaggerItem } from "@/components/motion/motion";
-import { focusAreas } from "@/config/copy";
+import { faqs, focusAreas } from "@/config/copy";
 import { eventToMedia } from "@/features/events/event-card";
 import { ProjectCard } from "@/features/projects/project-card";
 import { ExpandingGallery } from "./expanding-gallery";
@@ -22,6 +22,38 @@ const differentiators = [
   { title: "Projects over theory", body: "We value shipped work: products, open-source contributions and hackathon entries." },
   { title: "Rooted in Pakistan", body: "Built by developers in Pakistan, for developers in Pakistan, with a global standard of craft." },
 ];
+
+export function CommunityOverview() {
+  return (
+    <Section id="overview" className="bg-surface">
+      <SectionHeading
+        eyebrow="Why Trojans PK"
+        title="Built by developers, for developers in Pakistan"
+        description="We believe practical software development, open collaboration, and shared knowledge unlock incredible talent across Pakistan."
+      />
+      <div className="mt-16 grid gap-8 md:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-background p-8">
+          <h3 className="text-xl font-medium tracking-tight text-foreground">Learning by Shipping</h3>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            Tutorials and video courses only take you so far. Trojans PK focuses on practical engineering: building full-stack web products, training AI models on local datasets, deploying scalable cloud infrastructure, and writing production-grade code.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-background p-8">
+          <h3 className="text-xl font-medium tracking-tight text-foreground">Open-Source Ecosystem</h3>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            Our members actively maintain and contribute to open-source software repositories on GitHub. From making first pull requests to designing microservices architecture, we cultivate transparent code reviews, technical documentation, and open standards.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-background p-8">
+          <h3 className="text-xl font-medium tracking-tight text-foreground">National Hackathons</h3>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            We form teams to compete on national and international tech stages. Our members advanced to the national finals of the Alibaba Cloud AI Hackathon Pakistan 2026 with BolKhata, an AI voice ledger built specifically for Pakistani micro-merchants.
+          </p>
+        </div>
+      </div>
+    </Section>
+  );
+}
 
 export function Introduction() {
   return (
@@ -147,6 +179,26 @@ export async function Testimonials() {
           </StaggerItem>
         ))}
       </Stagger>
+    </Section>
+  );
+}
+
+export function HomeFaq() {
+  return (
+    <Section id="faq">
+      <SectionHeading
+        eyebrow="Common questions"
+        title="Everything you need to know"
+        description="How Trojans PK works, who it is for, and how to get involved."
+      />
+      <div className="mt-16 grid gap-6 md:grid-cols-2">
+        {faqs.map((faq) => (
+          <div key={faq.q} className="rounded-2xl border border-border bg-surface p-7">
+            <h3 className="text-lg font-medium tracking-tight text-foreground">{faq.q}</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
+          </div>
+        ))}
+      </div>
     </Section>
   );
 }

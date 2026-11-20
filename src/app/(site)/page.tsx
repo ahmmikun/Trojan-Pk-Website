@@ -6,9 +6,11 @@ import { AchievementSection } from "@/features/achievement/achievement-section";
 import { Hero } from "@/features/home/hero";
 import {
   CommunityImpact,
+  CommunityOverview,
   EventsPreview,
   FeaturedProjects,
   FinalCta,
+  HomeFaq,
   Introduction,
   TeamPreview,
   Testimonials,
@@ -20,11 +22,36 @@ import { getSocialLinks } from "@/content/social";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { description, defaultOgImage } = await getSiteSettings();
+  const ogImage = defaultOgImage || `${siteConfig.url}${siteConfig.ogImage}`;
   return {
     title: { absolute: `${siteConfig.name} | Developer & Open-Source Community in Pakistan` },
     description,
-    alternates: { canonical: "/" },
-    ...(defaultOgImage ? { openGraph: { images: [defaultOgImage] }, twitter: { images: [defaultOgImage] } } : {}),
+    keywords: [
+      "developer community",
+      "open-source community",
+      "software engineering community",
+      "technology community Pakistan",
+      "coding community",
+      "AI hackathons",
+      "tech mentorship",
+      "Trojans PK",
+    ],
+    alternates: { canonical: `${siteConfig.url}/` },
+    openGraph: {
+      type: "website",
+      siteName: siteConfig.name,
+      locale: siteConfig.locale,
+      title: `${siteConfig.name} | Developer & Open-Source Community in Pakistan`,
+      description,
+      url: `${siteConfig.url}/`,
+      images: [{ url: ogImage, width: 1024, height: 940, alt: `${siteConfig.name} logo` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${siteConfig.name} | Developer & Open-Source Community in Pakistan`,
+      description,
+      images: [ogImage],
+    },
   };
 }
 
@@ -52,14 +79,50 @@ export default async function HomePage() {
         data={{
           "@context": "https://schema.org",
           "@type": "Organization",
+          "@id": `${siteConfig.url}#organization`,
           name: siteConfig.name,
+          alternateName: ["Trojans", "Trojans Pakistan"],
           url: siteConfig.url,
           logo: `${siteConfig.url}/brand/mark.png`,
+          image: `${siteConfig.url}/brand/logo-full.png`,
           description: siteConfig.description,
-          sameAs: social.filter((l) => l.external).map((l) => l.href),
+          email: "talha@trojanspk.com",
+          keywords: "Developer Community, Open-Source Community, Software Engineering Community, Tech Community Pakistan, AI Hackathons, Collaborative Coding, Tech Mentorship",
+          knowsAbout: [
+            "Software Development",
+            "Open Source Software",
+            "Artificial Intelligence",
+            "Web Development",
+            "Hackathons",
+            "Tech Mentorship",
+            "Community Building",
+            "Computer Science Education",
+          ],
+          serviceType: "Developer and Open-Source Community",
+          contactPoint: [
+            {
+              "@type": "ContactPoint",
+              contactType: "Community Support & Inquiries",
+              email: "talha@trojanspk.com",
+              url: `${siteConfig.url}/contact`,
+              availableLanguage: ["English", "Urdu"],
+            },
+          ],
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Lahore",
+            addressRegion: "Punjab",
+            addressCountry: "PK",
+          },
+          sameAs: [
+            ...social.filter((l) => l.external).map((l) => l.href),
+            "https://github.com/trojan-pk",
+            "https://www.linkedin.com/company/trojan-pk",
+          ],
         }}
       />
       <Hero />
+      <CommunityOverview />
       <WhatWeDo />
       <Introduction />
       <PartnersSection partners={partners} />
@@ -69,6 +132,7 @@ export default async function HomePage() {
       <EventsPreview />
       <TeamPreview />
       <Testimonials />
+      <HomeFaq />
       <FinalCta />
     </>
   );

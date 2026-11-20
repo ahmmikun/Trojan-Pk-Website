@@ -23,8 +23,7 @@ export async function Hero() {
         </Reveal>
 
         <h1 className="mx-auto mt-8 max-w-4xl text-balance text-[2.5rem] leading-[1.04] font-medium tracking-tighter sm:text-6xl lg:text-7xl">
-          <span className="sr-only">Where developers come together to build what&apos;s next.</span>
-          <WordReveal text="Where developers come together to build" delay={0.05} decorative />{" "}
+          <WordReveal text="Where developers come together to build" delay={0.05} />{" "}
           <RotatingWords words={["what's next.", "open source.", "real products.", "for Pakistan."]} />
         </h1>
 

@@ -5,7 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 // Mobile browsers resize the viewport as the address bar hides; don't re-layout the pin for that.
@@ -134,9 +134,15 @@ const face = {
  */
 export function MissionStory({ eyebrow, title, description, principles }: Props) {
   const root = useRef<HTMLElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useGSAP(
     () => {
+      if (!mounted) return;
       const el = root.current;
       if (!el) return;
       const mm = gsap.matchMedia();
@@ -354,14 +360,15 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
 
       return () => mm.revert();
     },
-    { scope: root },
+    { scope: root, dependencies: [mounted] },
   );
 
   return (
     <section ref={root} id="about-community" aria-labelledby="mission-title" className="group/story relative border-t border-border">
       <div data-pin className="relative">
-        {/* ---- Story stage (decorative; hidden until the story is active) ---- */}
-        <div aria-hidden="true" data-stage className="relative hidden h-svh overflow-hidden group-data-[story]/story:block">
+        {/* ---- Story stage (decorative; client-only animation) ---- */}
+        {mounted ? (
+          <div aria-hidden="true" data-stage className="relative hidden h-svh overflow-hidden group-data-[story]/story:block">
           {/* Phones: the wide network is turned upright (rotated 90deg) to fill a portrait screen. */}
           <svg
             data-net
@@ -452,6 +459,7 @@ export function MissionStory({ eyebrow, title, description, principles }: Props)
             Scroll
           </p>
         </div>
+        ) : null}
 
         {/* ---- Final scene: the mission. Plain content without the story. ---- */}
         <div className="relative py-24 sm:py-32 group-data-[story=desktop]/story:absolute group-data-[story=desktop]/story:inset-0 group-data-[story=desktop]/story:flex group-data-[story=desktop]/story:items-center group-data-[story=desktop]/story:py-0">
