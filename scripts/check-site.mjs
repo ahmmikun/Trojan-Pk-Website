@@ -113,7 +113,7 @@ for (const page of pages) {
   for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
     try {
       const data = JSON.parse(m[1]);
-      if (!data["@context"] || !data["@type"]) fail(page, "JSON-LD is missing @context/@type");
+      if (!data["@context"] || (!data["@type"] && !data["@graph"])) fail(page, "JSON-LD is missing @context/@type");
     } catch {
       fail(page, "invalid JSON-LD");
     }
@@ -200,6 +200,83 @@ if (!/Sitemap:/i.test(robotsTxt)) fail("/robots.txt", "missing or does not refer
   const missing = await fetch(BASE + "/this-page-does-not-exist");
   await missing.body?.cancel();
   if (missing.status !== 404) fail("/this-page-does-not-exist", `expected 404, got ${missing.status}`);
+
+  // --- Agent readiness checks (acceptmarkdown.com & Ora model) ---
+  // 1. Markdown content negotiation on homepage
+  const mdRes = await fetch(BASE + "/", { headers: { accept: "text/markdown" } });
+  const mdType = mdRes.headers.get("content-type") ?? "";
+  const mdVary = mdRes.headers.get("vary") ?? "";
+  const mdBody = await mdRes.text();
+  if (mdRes.status !== 200) fail("/ (Accept: text/markdown)", `expected 200, got ${mdRes.status}`);
+  if (!mdType.includes("text/markdown")) fail("/ (Accept: text/markdown)", `expected Content-Type text/markdown, got "${mdType}"`);
+  if (!/accept/i.test(mdVary)) fail("/ (Accept: text/markdown)", `missing Vary: Accept (got "${mdVary}")`);
+  if (mdBody.length < 50 || !mdBody.includes("#")) fail("/ (Accept: text/markdown)", "empty or invalid markdown response");
+
+  // 2. HTML content negotiation on homepage (Vary: Accept)
+  const htmlRes = await fetch(BASE + "/", { headers: { accept: "text/html" } });
+  const htmlVary = htmlRes.headers.get("vary") ?? "";
+  if (!/accept/i.test(htmlVary)) fail("/ (Accept: text/html)", `missing Vary: Accept header for HTML response (got "${htmlVary}")`);
+
+  // 3. Agent-friendly 404s (Accept: text/markdown)
+  const probePath = "/__ora-404-probe-agent-check";
+  const probeRes = await fetch(BASE + probePath, { headers: { accept: "text/markdown" } });
+  const probeType = probeRes.headers.get("content-type") ?? "";
+  const probeVary = probeRes.headers.get("vary") ?? "";
+  const probeBody = await probeRes.text();
+  if (probeRes.status !== 404) fail(probePath, `expected status 404, got ${probeRes.status}`);
+  if (!probeType.includes("text/markdown")) fail(probePath, `expected Content-Type text/markdown, got "${probeType}"`);
+  if (!/accept/i.test(probeVary)) fail(probePath, `expected Vary: Accept on markdown 404, got "${probeVary}"`);
+  if (probeBody.length < 20) fail(probePath, `markdown error body too short (${probeBody.length} chars, expected >= 20)`);
+  if (!/sitemap|llms\.txt|homepage|not found/i.test(probeBody)) fail(probePath, "markdown 404 body missing explanation and recovery links");
+
+  // 4. Agent instructions (llms.txt)
+  const llmsRes = await fetch(BASE + "/llms.txt");
+  if (llmsRes.status !== 200) {
+    fail("/llms.txt", `expected 200, got ${llmsRes.status}`);
+  } else {
+    const llmsText = await llmsRes.text();
+    if (!llmsText.includes("# Trojans PK")) fail("/llms.txt", "missing title");
+    if (!/When to Use This/i.test(llmsText)) fail("/llms.txt", "missing 'When to Use This' agent guidance section");
+  }
+
+  // 5. Trust anchor pages (/about, /contact, /privacy) with >= 500 characters
+  for (const anchor of ["/about", "/contact", "/privacy"]) {
+    const loadedAnchor = await load(anchor);
+    if (loadedAnchor.status !== 200) {
+      fail(anchor, `trust anchor page returned HTTP ${loadedAnchor.status}`);
+    } else {
+      const plainText = loadedAnchor.html
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (plainText.length < 500) fail(anchor, `trust anchor page has only ${plainText.length} characters (expected >= 500)`);
+    }
+  }
+
+  // 6. Organization schema completeness on homepage
+  const homeLoaded = await load("/");
+  const hasOrgSchema = homeLoaded.html.includes('"contactPoint"') && homeLoaded.html.includes('"address"');
+  if (!hasOrgSchema) fail("/", "homepage Organization JSON-LD is missing contactPoint or address");
+
+  // 7. Metadata completeness on homepage
+  const hasCanonical = homeLoaded.html.includes('<link rel="canonical"');
+  const hasOgImage = homeLoaded.html.includes('property="og:image"');
+  const hasOgType = homeLoaded.html.includes('property="og:type"');
+  const hasLang = homeLoaded.html.includes('<html lang="');
+  if (!hasCanonical || !hasOgImage || !hasOgType || !hasLang) {
+    fail("/", `incomplete metadata signals: canonical=${hasCanonical}, og:image=${hasOgImage}, og:type=${hasOgType}, lang=${hasLang}`);
+  }
+
+  // 8. Essential files verification (robots.txt, sitemap.xml, favicon.ico, manifest.json, site.webmanifest, llms.txt)
+  for (const file of ["/robots.txt", "/sitemap.xml", "/favicon.ico", "/manifest.json", "/site.webmanifest", "/llms.txt"]) {
+    const fileRes = await fetch(BASE + file);
+    if (fileRes.status !== 200) {
+      fail(file, `essential file returned HTTP ${fileRes.status}`);
+    }
+  }
 }
 
 // A localhost base URL means NEXT_PUBLIC_SITE_URL was not set for this build.
