@@ -11,7 +11,7 @@ import type { TeamMember } from "@/types/content";
 export function MemberAvatar({ member, className }: { member: TeamMember; className?: string }) {
   if (member.photo) {
     return (
-      <HoverFrame label={null} className={cn("aspect-[4/5] bg-surface-2", className)}>
+      <HoverFrame label={null} className={cn("aspect-[4/5]", className)}>
         <ParallaxImage
           src={member.photo}
           alt={member.photo.startsWith("/samples/") ? `Illustrative photo for ${member.name}` : `Portrait of ${member.name}`}

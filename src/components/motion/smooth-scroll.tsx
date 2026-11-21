@@ -4,9 +4,12 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect, useRef } from "react";
-import { useIntroDone } from "./intro-store";
+import { markIntroDone, useIntroDone } from "./intro-store";
 
 gsap.registerPlugin(ScrollTrigger);
+
+/** The curtain hands over after 1.95 s; this is the hard upper bound before scrolling is released anyway. */
+const INTRO_MAX_MS = 4000;
 
 /**
  * Lenis smooth scrolling for the whole page. Skipped for visitors who prefer
@@ -27,6 +30,15 @@ export function SmoothScroll() {
       lenis.current?.destroy();
       lenis.current = null;
     };
+  }, []);
+
+  // Scrolling waits for the opening curtain. Pages rendered without one (the root 404) must not
+  // wait at all, and a curtain that never reports back (e.g. a script error) must not lock the
+  // page: release after the longest the curtain can take.
+  useEffect(() => {
+    if (!document.querySelector("[data-intro]")) markIntroDone();
+    const release = setTimeout(markIntroDone, INTRO_MAX_MS);
+    return () => clearTimeout(release);
   }, []);
 
   useEffect(() => {

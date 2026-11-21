@@ -47,7 +47,7 @@ function MediaTile({ item, index, aspect, sizes, priority }: { item: MediaItem; 
   return (
     <article className="group relative">
       <HoverFrame
-        className={cn("rounded-md bg-surface-2", aspect)}
+        className={cn("rounded-md", aspect)}
         overlay={
           <>
             {/* Title over the media, like a cover lockup. Decorative: the real title is the link below. */}

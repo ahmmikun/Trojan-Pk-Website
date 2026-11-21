@@ -21,7 +21,7 @@ type Props = {
 export function Cover({ src, title, label, className, priority, sizes = "(min-width: 1024px) 33vw, 100vw", hoverLabel = "View" }: Props) {
   if (src) {
     return (
-      <HoverFrame label={hoverLabel} className={cn("aspect-[16/10] bg-surface-2", className)}>
+      <HoverFrame label={hoverLabel} className={cn("aspect-[16/10]", className)}>
         <ParallaxImage src={src} alt={title} sizes={sizes} priority={priority} />
       </HoverFrame>
     );

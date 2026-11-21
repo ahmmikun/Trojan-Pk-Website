@@ -108,6 +108,9 @@
   --sidebar-accent-foreground: #0f0f10;
   --sidebar-border: rgb(0 0 0 / 0.1);
   --sidebar-ring: #3b5bdb;
+  --scrollbar-thumb: rgb(0 0 0 / 0.2);
+  --scrollbar-thumb-hover: rgb(0 0 0 / 0.38);
+  --scrollbar-track: transparent;
   color-scheme: light;
 }
 
@@ -150,6 +153,9 @@
   --sidebar-accent-foreground: #f2f2f0;
   --sidebar-border: rgb(255 255 255 / 0.08);
   --sidebar-ring: #6b8dff;
+  --scrollbar-thumb: rgb(255 255 255 / 0.2);
+  --scrollbar-thumb-hover: rgb(255 255 255 / 0.38);
+  --scrollbar-track: transparent;
   color-scheme: dark;
 }
 
@@ -165,6 +171,27 @@
   }
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  /* Thin custom scrollbar matching theme (WebKit/Blink) */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
   }
   html {
     @apply font-sans;
@@ -433,6 +460,8 @@
     border: 1px solid rgb(255 255 255 / 0.08);
     box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 30px -18px rgb(0 0 0 / 0.5);
     font-size: 0.86em;
+    --scrollbar-thumb: rgb(255 255 255 / 0.2);
+    --scrollbar-thumb-hover: rgb(255 255 255 / 0.38);
   }
   .md-code-bar {
     display: flex;
@@ -503,7 +532,7 @@
 
   /* Divider */
   .md-prose hr { border: 0; text-align: center; margin-block: 2.5em; }
-  .md-prose hr::after { content: "• • •"; letter-spacing: 0.75em; color: var(--muted-foreground); font-size: 0.85em; }
+  .md-prose hr::after { content: "â€¢ â€¢ â€¢"; letter-spacing: 0.75em; color: var(--muted-foreground); font-size: 0.85em; }
 
   /* Footnotes (remark-gfm) */
   .md-prose .footnotes { margin-top: 3em; border-top: 1px solid var(--border); padding-top: 1.5em; font-size: 0.88em; color: var(--muted-foreground); }

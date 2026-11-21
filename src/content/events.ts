@@ -22,7 +22,13 @@ export async function getEventBySlug(slug: string): Promise<CommunityEvent | nul
   return (await visibleEvents()).find((e) => e.slug === slug) ?? null;
 }
 
-export async function getEventsPreview(): Promise<{ upcoming: CommunityEvent[]; past: CommunityEvent[] }> {
+/**
+ * Home page selection: upcoming events first (soonest first), then the most recent past
+ * ones, up to `limit` in total. A fixed per-group cap would hide events whenever one
+ * group is empty (e.g. four completed events and nothing upcoming showed only three).
+ */
+export async function getEventsPreview(limit = 5): Promise<{ upcoming: CommunityEvent[]; past: CommunityEvent[] }> {
   const { upcoming, past } = await getEvents();
-  return { upcoming: upcoming.slice(0, 3), past: past.slice(0, 3) };
+  const shownUpcoming = upcoming.slice(0, limit);
+  return { upcoming: shownUpcoming, past: past.slice(0, limit - shownUpcoming.length) };
 }

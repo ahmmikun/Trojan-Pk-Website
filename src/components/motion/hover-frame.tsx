@@ -17,6 +17,8 @@ type Props = {
   className?: string;
   /** Cursor disc text for linked tiles; null shows no disc. */
   label?: string | null;
+  /** Background shown before the image loads (clipped with the image on hover). */
+  surface?: string;
 };
 
 /**
@@ -28,7 +30,7 @@ type Props = {
  * stretch an ::after over the whole card. Mouse only; touch and reduced-motion
  * visitors get a static frame.
  */
-export function HoverFrame({ children, overlay, className, label = "View" }: Props) {
+export function HoverFrame({ children, overlay, className, label = "View", surface = "bg-surface-2" }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const [active, setActive] = useState(false);
@@ -94,8 +96,10 @@ export function HoverFrame({ children, overlay, className, label = "View" }: Pro
 
   return (
     <div ref={ref} className={cn("relative overflow-hidden", className)}>
+      {/* The placeholder surface lives on the clipped layer, so the margin the hover opens up
+          shows the page itself instead of a lighter frame around the image. */}
       <motion.div
-        className="absolute inset-0 overflow-hidden"
+        className={cn("absolute inset-0 overflow-hidden", surface)}
         initial={false}
         animate={{ clipPath: active ? "inset(10px round 14px)" : "inset(0px round 0px)" }}
         transition={{ duration: 0.9, ease: EASE }}

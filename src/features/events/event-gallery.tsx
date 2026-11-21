@@ -50,7 +50,7 @@ export function EventGallery({ photos, title }: { photos: EventPhoto[]; title: s
           return (
             <StaggerItem key={`${p.src}-${i}`} className={t.span}>
               <article className="group relative">
-                <HoverFrame className={cn("rounded-md bg-surface-2", t.aspect)} label="View">
+                <HoverFrame className={cn("rounded-md", t.aspect)} label="View">
                   <ParallaxImage src={p.src} alt={alt(p, i)} sizes={t.sizes} strength={8} />
                   <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent opacity-80 transition-opacity duration-700 group-data-[media-hover=on]:opacity-0" />
                 </HoverFrame>
